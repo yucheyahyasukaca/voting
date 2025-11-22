@@ -1,0 +1,60 @@
+===========================================
+SETUP ENVIRONMENT VARIABLES
+===========================================
+
+MASALAH:
+Error "supabaseKey is required" menunjukkan file .env.local belum dibuat.
+
+SOLUSI:
+Ikuti langkah-langkah berikut untuk memperbaiki error:
+
+LANGKAH 1: Buat file .env.local
+-------------------------------
+Di root folder project (D:\My Project\voting), buat file baru dengan nama:
+  .env.local
+
+LANGKAH 2: Isi file dengan credentials Supabase
+-----------------------------------------------
+Copy dan paste ke dalam file .env.local:
+
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+
+LANGKAH 3: Dapatkan credentials dari Supabase
+---------------------------------------------
+1. Buka https://app.supabase.com
+2. Login dan pilih project Anda (atau buat project baru)
+3. Di sidebar kiri, klik Settings (gear icon)
+4. Klik "API" di menu Settings
+5. Copy nilai-nilai berikut:
+
+   - Project URL → ganti "your-project.supabase.co"
+   - anon public key → ganti "your-anon-key-here"
+   - service_role key → ganti "your-service-role-key-here"
+
+LANGKAH 4: Setup Database
+------------------------
+1. Di Supabase Dashboard, buka SQL Editor
+2. Copy seluruh isi file: supabase/schema.sql
+3. Paste ke SQL Editor
+4. Klik "Run" untuk membuat tabel
+
+LANGKAH 5: Restart Development Server
+-------------------------------------
+1. Stop server yang sedang berjalan (Ctrl+C di terminal)
+2. Jalankan kembali: npm run dev
+
+===========================================
+
+CONTOH file .env.local yang benar:
+-------------------------------------------
+NEXT_PUBLIC_SUPABASE_URL=https://xyzabc123.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emFiYzEyMyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ2OTI3MjAwLCJleHAiOjE5NjI1MDMyMDB9.abc123xyz
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emFiYzEyMyIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2NDY5MjcyMDAsImV4cCI6MTk2MjUwMzIwMH0.xyz789abc
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+===========================================
+
