@@ -1,7 +1,7 @@
 name = "voting-app"
 compatibility_date = "2024-09-23"
-pages_build_output_dir = ".vercel/output/static"
+main = "src/index.ts"
 
-# Note: This file is for Cloudflare Pages configuration
+# Note: This file is for Cloudflare Workers configuration
+# For Workers deployment, use: wrangler deploy
 # For Pages deployment, use: wrangler pages deploy .vercel/output/static
-# Do NOT use: wrangler deploy (that's for Workers, not Pages)
