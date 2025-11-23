@@ -17,22 +17,34 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('Attempting login with:', email)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
+      console.log('Login response:', { data, error })
+
       if (error) {
+        console.error('Login error:', error)
         setError(error.message)
         return
       }
 
       if (data.session) {
-        // Redirect to admin dashboard
-        router.push('/admin')
-        router.refresh()
+        console.log('Login successful, session:', data.session)
+        
+        // Wait a bit for session to be stored
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Force reload to ensure middleware picks up session
+        window.location.href = '/admin'
+      } else {
+        setError('Login berhasil tapi tidak ada session')
       }
     } catch (err: any) {
+      console.error('Exception during login:', err)
       setError(err.message || 'Terjadi kesalahan')
     } finally {
       setLoading(false)
