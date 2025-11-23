@@ -6,8 +6,10 @@ Untuk deployment di Cloudflare Pages, gunakan konfigurasi berikut:
 
 ### Build Command:
 ```bash
-npm run build
+npm run build:cloudflare
 ```
+
+**PENTING:** Gunakan `build:cloudflare` bukan `build` karena ini akan menjalankan `@cloudflare/next-on-pages` setelah build Next.js.
 
 ### Build Output Directory:
 ```
@@ -18,6 +20,11 @@ npm run build
 ```bash
 npx wrangler pages deploy .vercel/output/static --project-name=voting-app
 ```
+
+## File Konfigurasi
+
+- `.npmrc` - Mengatur `legacy-peer-deps=true` untuk mengatasi peer dependency conflicts
+- `wrangler.toml` - Konfigurasi Cloudflare Pages dengan output directory yang benar
 
 ## Catatan
 

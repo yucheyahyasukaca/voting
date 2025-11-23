@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx @cloudflare/next-on-pages",
-    "build:cloudflare": "npx @cloudflare/next-on-pages",
+    "build": "next build",
+    "build:cloudflare": "next build && npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "deploy": "npx wrangler pages deploy .vercel/output/static --project-name=voting-app"
