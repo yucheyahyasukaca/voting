@@ -689,7 +689,7 @@ export default function AdminResultsPage() {
         {/* Refresh Button */}
         <div className="mt-6 text-center">
           <button
-            onClick={loadResults}
+            onClick={() => loadResults()}
             className="text-blue-600 hover:underline flex items-center gap-2 mx-auto"
           >
             <span>🔄</span>

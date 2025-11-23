@@ -409,6 +409,11 @@ export default function ElectionDetailPage() {
   }
 
   const downloadQRCode = async (qrCodeUrl: string, qrCodeNumber: number, qrCode: string) => {
+    if (!election) {
+      alert('Data pemilihan tidak ditemukan. Silakan refresh halaman dan coba lagi.')
+      return
+    }
+
     try {
       // Find the QR code element by data attribute
       const qrElement = document.querySelector(`[data-qr-id="${qrCode}"]`) as HTMLElement
