@@ -56,6 +56,8 @@ export default function ElectionDetailPage() {
   const [activeTab, setActiveTab] = useState<'categories' | 'candidates' | 'qr' | 'results'>('categories')
   const [qrCount, setQrCount] = useState(1)
   const [generating, setGenerating] = useState(false)
+  const [currentQrPage, setCurrentQrPage] = useState(1)
+  const [qrItemsPerPage] = useState(9) // 3x3 grid (or 1x3 on mobile)
 
   useEffect(() => {
     loadData()
@@ -211,6 +213,12 @@ export default function ElectionDetailPage() {
       // Switch to QR tab immediately for better UX
       setActiveTab('qr')
       
+      // Reset to first page when new QR codes are added (so user can see the new ones)
+      setCurrentQrPage(1)
+      
+      // Reset to first page when new QR codes are added (so user can see the new ones)
+      setCurrentQrPage(1)
+      
       // Wait a bit to ensure database commit
       await new Promise(resolve => setTimeout(resolve, 300))
 
@@ -280,6 +288,12 @@ export default function ElectionDetailPage() {
         setVotingSession(updatedSessions.length > 0 ? updatedSessions[0] : null)
       }
 
+      // Adjust current page if we deleted the last item on the current page
+      const totalPagesAfterDelete = Math.ceil(updatedSessions.length / qrItemsPerPage)
+      if (currentQrPage > totalPagesAfterDelete && totalPagesAfterDelete > 0) {
+        setCurrentQrPage(totalPagesAfterDelete)
+      }
+
       // Wait a bit to ensure database commit
       await new Promise(resolve => setTimeout(resolve, 200))
 
@@ -330,6 +344,7 @@ export default function ElectionDetailPage() {
       const previousSessions = [...votingSessions]
       setVotingSessions([])
       setVotingSession(null)
+      setCurrentQrPage(1) // Reset to first page
 
       // Delete all voting sessions for this election
       const { data, error } = await supabase
@@ -936,69 +951,181 @@ export default function ElectionDetailPage() {
                 {/* List of QR Codes */}
                 {votingSessions.length > 0 ? (
                   <div>
-                    <div className="flex items-center justify-between mb-4">
+                    {/* Pagination Info */}
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                       <p className="text-sm text-gray-600">
                         Total: <span className="font-semibold">{votingSessions.length}</span> QR code aktif
                       </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {votingSessions.map((session, index) => {
-                        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-                        const sessionUrl = `${appUrl}/voter?qrcode=${session.qr_code}`
+                      {(() => {
+                        const totalPages = Math.ceil(votingSessions.length / qrItemsPerPage)
+                        const startIndex = (currentQrPage - 1) * qrItemsPerPage + 1
+                        const endIndex = Math.min(currentQrPage * qrItemsPerPage, votingSessions.length)
                         return (
-                          <div
-                            key={session.id}
-                            className="bg-white rounded-lg shadow-md p-4 border border-gray-200"
-                          >
-                            <div className="flex flex-col items-center space-y-4">
-                              <div 
-                                className="bg-white p-3 rounded-lg border-2 border-gray-200"
-                                data-qr-id={session.qr_code}
-                              >
-                                <QRCode value={sessionUrl} size={150} />
-                              </div>
-                              <div className="w-full text-center space-y-2">
-                                <p className="text-xs text-gray-500 mb-1 font-semibold">QR Code #{index + 1}</p>
-                                <p className="text-xs text-gray-400 break-all bg-gray-50 p-2 rounded">
-                                  {session.qr_code.substring(0, 30)}...
-                                </p>
-                                <div className="flex flex-col gap-2 mt-3">
-                                  <button
-                                    onClick={() => downloadQRCode(sessionUrl, index + 1, session.qr_code)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    Download untuk Print
-                                  </button>
-                                  <div className="flex gap-2">
-                                    <a
-                                      href={sessionUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex-1 text-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium transition-colors"
+                          <p className="text-sm text-gray-600">
+                            Menampilkan {startIndex}-{endIndex} dari {votingSessions.length}
+                          </p>
+                        )
+                      })()}
+                    </div>
+
+                    {/* Paginated QR Codes */}
+                    {(() => {
+                      const totalPages = Math.ceil(votingSessions.length / qrItemsPerPage)
+                      const startIndex = (currentQrPage - 1) * qrItemsPerPage
+                      const endIndex = startIndex + qrItemsPerPage
+                      const paginatedSessions = votingSessions.slice(startIndex, endIndex)
+
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {paginatedSessions.map((session, index) => {
+                              const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+                              const sessionUrl = `${appUrl}/voter?qrcode=${session.qr_code}`
+                              const globalIndex = startIndex + index + 1
+                              return (
+                                <div
+                                  key={session.id}
+                                  className="bg-white rounded-lg shadow-md p-4 border border-gray-200"
+                                >
+                                  <div className="flex flex-col items-center space-y-4">
+                                    <div 
+                                      className="bg-white p-3 rounded-lg border-2 border-gray-200"
+                                      data-qr-id={session.qr_code}
                                     >
-                                      Buka Link
-                                    </a>
-                                    <button
-                                      onClick={() => deleteQRCode(session.id, index + 1)}
-                                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium transition-colors flex items-center justify-center gap-1"
-                                      title="Hapus QR code ini secara permanen"
-                                    >
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                      </svg>
-                                      Hapus
-                                    </button>
+                                      <QRCode value={sessionUrl} size={150} />
+                                    </div>
+                                    <div className="w-full text-center space-y-2">
+                                      <p className="text-xs text-gray-500 mb-1 font-semibold">QR Code #{globalIndex}</p>
+                                      <p className="text-xs text-gray-400 break-all bg-gray-50 p-2 rounded">
+                                        {session.qr_code.substring(0, 30)}...
+                                      </p>
+                                      <div className="flex flex-col gap-2 mt-3">
+                                        <button
+                                          onClick={() => downloadQRCode(sessionUrl, globalIndex, session.qr_code)}
+                                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                          </svg>
+                                          Download untuk Print
+                                        </button>
+                                        <div className="flex gap-2">
+                                          <a
+                                            href={sessionUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 text-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium transition-colors"
+                                          >
+                                            Buka Link
+                                          </a>
+                                          <button
+                                            onClick={() => deleteQRCode(session.id, globalIndex)}
+                                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                                            title="Hapus QR code ini secara permanen"
+                                          >
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Hapus
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Pagination Controls */}
+                          {totalPages > 1 && (
+                            <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                              {/* Page Info */}
+                              <p className="text-sm text-gray-600">
+                                Halaman <span className="font-semibold">{currentQrPage}</span> dari <span className="font-semibold">{totalPages}</span>
+                              </p>
+
+                              {/* Pagination Buttons */}
+                              <div className="flex items-center gap-2">
+                                {/* Previous Button */}
+                                <button
+                                  onClick={() => setCurrentQrPage(prev => Math.max(1, prev - 1))}
+                                  disabled={currentQrPage === 1}
+                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                                    currentQrPage === 1
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                  </svg>
+                                  <span className="hidden sm:inline">Sebelumnya</span>
+                                </button>
+
+                                {/* Page Numbers */}
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                    // Show first page, last page, current page, and pages around current
+                                    const showPage = 
+                                      page === 1 ||
+                                      page === totalPages ||
+                                      (page >= currentQrPage - 1 && page <= currentQrPage + 1)
+
+                                    if (!showPage) {
+                                      // Show ellipsis
+                                      const prevPage = page - 1
+                                      const nextPage = page + 1
+                                      if (
+                                        (prevPage === 1 || (prevPage >= currentQrPage - 1 && prevPage <= currentQrPage + 1)) &&
+                                        (nextPage === totalPages || (nextPage >= currentQrPage - 1 && nextPage <= currentQrPage + 1))
+                                      ) {
+                                        return (
+                                          <span key={page} className="px-2 text-gray-400">
+                                            ...
+                                          </span>
+                                        )
+                                      }
+                                      return null
+                                    }
+
+                                    return (
+                                      <button
+                                        key={page}
+                                        onClick={() => setCurrentQrPage(page)}
+                                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                                          page === currentQrPage
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }`}
+                                      >
+                                        {page}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+
+                                {/* Next Button */}
+                                <button
+                                  onClick={() => setCurrentQrPage(prev => Math.min(totalPages, prev + 1))}
+                                  disabled={currentQrPage === totalPages}
+                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
+                                    currentQrPage === totalPages
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  <span className="hidden sm:inline">Selanjutnya</span>
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
-                          </div>
-                        )
-                      })}
-                    </div>
+                          )}
+                        </>
+                      )
+                    })()}
                   </div>
                 ) : (
                   <div className="bg-gray-50 rounded-lg p-8 text-center">
