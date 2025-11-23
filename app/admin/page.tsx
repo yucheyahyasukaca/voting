@@ -18,6 +18,11 @@ interface Election {
 export default function AdminPage() {
   const [elections, setElections] = useState<Election[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; election: Election | null }>({
+    show: false,
+    election: null,
+  })
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     loadElections()
@@ -58,6 +63,34 @@ export default function AdminPage() {
       loadElections()
     } catch (err) {
       alert('Terjadi kesalahan')
+    }
+  }
+
+  const handleDeleteElection = async () => {
+    if (!deleteModal.election) return
+
+    setDeleting(true)
+    try {
+      // Delete election (cascade will handle related data)
+      const { error } = await supabase
+        .from('elections')
+        .delete()
+        .eq('id', deleteModal.election.id)
+
+      if (error) {
+        console.error('Error deleting election:', error)
+        alert('Gagal menghapus pemilihan: ' + error.message)
+        return
+      }
+
+      // Close modal and reload
+      setDeleteModal({ show: false, election: null })
+      loadElections()
+    } catch (err: any) {
+      console.error('Error:', err)
+      alert('Terjadi kesalahan: ' + err.message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -123,29 +156,90 @@ export default function AdminPage() {
                   <p>Berakhir: {formatDate(election.end_date)}</p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="space-y-2">
                   <Link
                     href={`/admin/elections/${election.id}`}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center text-sm font-medium"
+                    className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center text-sm font-medium"
                   >
                     Kelola
                   </Link>
-                  <button
-                    onClick={() => toggleElectionStatus(election.id, election.is_active)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      election.is_active
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    {election.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => toggleElectionStatus(election.id, election.is_active)}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium ${
+                        election.is_active
+                          ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {election.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteModal({ show: true, election })}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                      title="Hapus pemilihan"
+                    >
+                      Hapus
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && deleteModal.election && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {deleteModal.election.title}
+            </h2>
+            
+            <div className="mb-4 space-y-1">
+              <p className="text-sm text-gray-600">
+                Mulai: {formatDate(deleteModal.election.start_date)}
+              </p>
+              <p className="text-sm text-gray-600">
+                Berakhir: {formatDate(deleteModal.election.end_date)}
+              </p>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-800">
+                <strong>Perhatian!</strong> Menghapus pemilihan ini akan menghapus <strong>semua data terkait</strong> termasuk:
+              </p>
+              <ul className="mt-2 ml-4 text-sm text-red-700 list-disc">
+                <li>Semua kategori</li>
+                <li>Semua kandidat</li>
+                <li>Semua suara (votes)</li>
+                <li>Semua QR codes</li>
+              </ul>
+              <p className="mt-2 text-sm text-red-800 font-semibold">
+                Tindakan ini tidak dapat dibatalkan!
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteElection}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+              </button>
+              <button
+                onClick={() => setDeleteModal({ show: false, election: null })}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

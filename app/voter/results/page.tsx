@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import QRCode from '@/components/QRCode'
+import { getVotingUrl } from '@/lib/app-url'
 
 interface Election {
   id: string
@@ -407,8 +408,7 @@ function ResultsPageContent() {
     )
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const qrCodeValue = votingSession ? `${appUrl}/voter?qrcode=${votingSession.qr_code}` : ''
+  const qrCodeValue = votingSession ? getVotingUrl(votingSession.qr_code) : ''
 
   return (
     <div className="min-h-screen bg-black">

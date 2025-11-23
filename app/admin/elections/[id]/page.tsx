@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatDate } from '@/lib/utils'
+import { getVotingUrl } from '@/lib/app-url'
 import Image from 'next/image'
 import QRCode from '@/components/QRCode'
 
@@ -153,7 +155,6 @@ export default function ElectionDetailPage() {
       const existingQRCodes = new Set(existingSessions?.map(s => s.qr_code) || [])
 
       // Generate multiple QR codes
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const sessionsToInsert = []
       let attempts = 0
       const maxAttempts = qrCount * 10 // Limit attempts to prevent infinite loop
@@ -546,9 +547,8 @@ export default function ElectionDetailPage() {
 
   if (!election) return null
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const votingUrl = votingSession
-    ? `${appUrl}/voter?qrcode=${votingSession.qr_code}`
+    ? getVotingUrl(votingSession.qr_code)
     : ''
 
   return (
@@ -986,8 +986,7 @@ export default function ElectionDetailPage() {
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {paginatedSessions.map((session, index) => {
-                              const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-                              const sessionUrl = `${appUrl}/voter?qrcode=${session.qr_code}`
+                              const sessionUrl = getVotingUrl(session.qr_code)
                               const globalIndex = startIndex + index + 1
                               return (
                                 <div
