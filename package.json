@@ -8,7 +8,7 @@
     "build:cloudflare": "next build && npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "npx wrangler deploy"
+    "deploy": "npx wrangler pages deploy .vercel/output/static --project-name=voting-app"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.8.7",
