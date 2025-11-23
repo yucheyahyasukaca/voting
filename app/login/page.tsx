@@ -76,7 +76,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder:text-gray-400"
               placeholder="admin@example.com"
               disabled={loading}
             />
@@ -92,7 +92,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder:text-gray-400"
               placeholder="••••••••"
               disabled={loading}
             />
@@ -119,10 +119,10 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center">
           <a
-            href="/voter"
+            href="/"
             className="text-sm text-blue-600 hover:text-blue-700"
           >
-            ← Kembali ke halaman voter
+            ← Kembali ke Home
           </a>
         </div>
       </div>

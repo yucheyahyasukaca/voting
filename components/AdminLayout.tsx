@@ -4,28 +4,42 @@ import { useState, ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
+import ConfirmDialog from './ConfirmDialog'
+import Toast from './Toast'
 
 interface AdminLayoutProps {
   children: ReactNode
 }
 
+interface ToastData {
+  message: string
+  type: 'success' | 'error' | 'info' | 'warning'
+}
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [toast, setToast] = useState<ToastData | null>(null)
   const pathname = usePathname()
   const router = useRouter()
 
   const handleLogout = async () => {
-    if (!confirm('Yakin ingin keluar?')) return
-    
+    setShowLogoutConfirm(false)
     setLoggingOut(true)
+    
     try {
       await signOut()
-      router.push('/login')
-      router.refresh()
+      setToast({ message: '✅ Berhasil logout!', type: 'success' })
+      
+      // Delay navigation untuk show toast
+      setTimeout(() => {
+        router.push('/login')
+        router.refresh()
+      }, 1000)
     } catch (err) {
       console.error('Error logging out:', err)
-      alert('Gagal logout')
+      setToast({ message: '❌ Gagal logout. Silakan coba lagi.', type: 'error' })
       setLoggingOut(false)
     }
   }
@@ -148,7 +162,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               disabled={loggingOut}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-indigo-600 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
@@ -228,6 +242,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </footer>
       </div>
+
+      {/* Confirm Dialog */}
+      {showLogoutConfirm && (
+        <ConfirmDialog
+          title="Konfirmasi Logout"
+          message="Yakin ingin keluar dari dashboard admin?"
+          confirmText="Ya, Keluar"
+          cancelText="Batal"
+          confirmType="danger"
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          duration={3000}
+        />
+      )}
     </div>
   )
 }

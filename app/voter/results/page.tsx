@@ -411,7 +411,7 @@ function ResultsPageContent() {
   const qrCodeValue = votingSession ? getVotingUrl(votingSession.qr_code) : ''
 
   return (
-    <div className="h-screen bg-black overflow-hidden flex flex-col">
+    <div className="min-h-screen lg:h-screen bg-black lg:overflow-hidden flex flex-col">
       {/* Header */}
       <div className="bg-black border-b border-gray-800 px-4 py-2 lg:py-3">
         <div className="max-w-7xl mx-auto">
@@ -493,9 +493,9 @@ function ResultsPageContent() {
       </div>
 
       {/* Main Content Card */}
-      <div className="flex-1 max-w-7xl mx-auto px-4 py-3 lg:py-4 w-full overflow-hidden">
-        <div className="bg-gray-100 rounded-2xl shadow-2xl p-4 lg:p-6 h-full overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 lg:gap-6 h-full">
+      <div className="flex-1 max-w-7xl mx-auto px-4 py-3 lg:py-4 w-full lg:overflow-hidden">
+        <div className="bg-gray-100 rounded-2xl shadow-2xl p-4 lg:p-6 lg:h-full lg:overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 lg:gap-6 lg:h-full">
             {/* Left Panel - QR Code */}
             <div className="flex flex-col items-center justify-start">
               <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 text-center">
@@ -641,7 +641,7 @@ function ResultsPageContent() {
                             Belum ada hasil voting untuk kategori ini
                           </div>
                         ) : (
-                          <div className="space-y-2 max-h-[calc(100vh-420px)] lg:max-h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
+                          <div className="space-y-2 lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                             {candidates.map((candidate, index) => (
                               <div
                                 key={candidate.id}
