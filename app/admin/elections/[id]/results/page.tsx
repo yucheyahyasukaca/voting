@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import AdminLayout from '@/components/AdminLayout'
 
 interface Election {
   id: string
@@ -315,48 +316,61 @@ export default function AdminResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat hasil...</p>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 font-medium">Memuat hasil...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href={`/admin/elections/${electionId}`} className="text-blue-600 hover:underline">
-              ← Kembali ke Detail Pemilihan
-            </Link>
-            <Link href={`/voter/results?election=${electionId}`} target="_blank" className="text-blue-600 hover:underline">
-              Lihat Halaman Public →
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <AdminLayout>
+      {/* Breadcrumb / Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <Link 
+          href={`/admin/elections/${electionId}`} 
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium group"
+        >
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Kembali ke Detail Pemilihan
+        </Link>
+        <Link 
+          href={`/voter/results?election=${electionId}`} 
+          target="_blank"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-all shadow-md hover:shadow-lg"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Lihat Halaman Public
+        </Link>
+      </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      {/* Header Section */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Hasil Voting Live (Admin)
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+              Hasil Voting Live
             </h1>
             {election && (
-              <p className="text-gray-600">Pantau perkembangan pemilihan.</p>
+              <p className="text-gray-600 text-lg">Pantau perkembangan pemilihan secara real-time</p>
             )}
           </div>
           <button
             onClick={resetAllVotes}
             disabled={resetting || totalVotes === 0}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all ${
               resetting || totalVotes === 0
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-red-600 text-white hover:bg-red-700 shadow-md hover:shadow-lg'
+                : 'bg-red-600 text-white hover:bg-red-700 shadow-lg hover:shadow-xl'
             }`}
             title={totalVotes === 0 ? 'Tidak ada voting untuk dihapus' : 'Hapus semua voting'}
           >
@@ -379,8 +393,11 @@ export default function AdminResultsPage() {
           </button>
         </div>
 
+        {/* Divider */}
+        <div className="border-t border-gray-200 mb-6"></div>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           {/* Total Suara Card */}
           <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 border border-slate-200/50">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 to-transparent opacity-50"></div>
@@ -478,9 +495,37 @@ export default function AdminResultsPage() {
           {/* Category Tabs */}
           {categoryResults.length > 0 ? (
             <div>
-              {/* Tabs - Scrollable on mobile */}
-              <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                <div className="flex gap-2 min-w-max md:flex-wrap">
+              {/* Mobile Dropdown */}
+              <div className="md:hidden mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Pilih Kategori:
+                </label>
+                <div className="relative">
+                  <select
+                    value={activeCategoryTab || ''}
+                    onChange={(e) => {
+                      setActiveCategoryTab(e.target.value)
+                      activeCategoryTabRef.current = e.target.value
+                    }}
+                    className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-200 rounded-xl text-gray-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer shadow-sm hover:border-gray-300 transition-all"
+                  >
+                    {categoryResults.map((categoryResult) => (
+                      <option key={categoryResult.category.id} value={categoryResult.category.id}>
+                        {categoryResult.category.name} ({categoryResult.totalVotes} suara)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop Tabs */}
+              <div className="hidden md:block mb-6">
+                <div className="flex gap-2 flex-wrap">
                   {categoryResults.map((categoryResult) => (
                     <button
                       key={categoryResult.category.id}
@@ -488,13 +533,16 @@ export default function AdminResultsPage() {
                         setActiveCategoryTab(categoryResult.category.id)
                         activeCategoryTabRef.current = categoryResult.category.id
                       }}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
                         activeCategoryTab === categoryResult.category.id
-                          ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300'
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transform scale-105'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-blue-300'
                       }`}
                     >
-                      {categoryResult.category.name}
+                      <div className="flex flex-col items-center">
+                        <span>{categoryResult.category.name}</span>
+                        <span className="text-xs opacity-90">{categoryResult.totalVotes} suara</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -700,10 +748,10 @@ export default function AdminResultsPage() {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Hasil diperbarui secara real-time</p>
+          <p>Hasil diperbarui secara real-time setiap 10 detik</p>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 

@@ -142,3 +142,4 @@ http://localhost:3000/reset-data
 
 Aplikasi voting Anda sekarang sepenuhnya menggunakan **Supabase Database** untuk penyimpanan data yang permanen dan scalable!
 
+

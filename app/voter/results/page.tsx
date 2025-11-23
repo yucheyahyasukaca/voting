@@ -411,49 +411,49 @@ function ResultsPageContent() {
   const qrCodeValue = votingSession ? getVotingUrl(votingSession.qr_code) : ''
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="h-screen bg-black overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="bg-black border-b border-gray-800 px-4 py-4">
+      <div className="bg-black border-b border-gray-800 px-4 py-2 lg:py-3">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-3">
             {/* Left - Title */}
             <div className="flex items-center gap-2 justify-center md:justify-start">
-              <span className="text-yellow-400 font-black text-2xl md:text-3xl">{titleNumber}</span>
-              <span className="text-white text-sm md:text-base ml-2">MALAM RESEPSI</span>
+              <span className="text-yellow-400 font-black text-xl lg:text-2xl">{titleNumber}</span>
+              <span className="text-white text-xs lg:text-sm ml-2">MALAM RESEPSI</span>
             </div>
 
             {/* Center - JATENG | Pilih Pejabat Favorit LIVE */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-white font-bold text-sm md:text-base">JATENG</span>
+                <span className="text-white font-bold text-xs lg:text-sm">JATENG</span>
                 <span className="text-gray-500">|</span>
-                <span className="text-white text-sm md:text-base font-medium">Pilih Pejabat Favorit</span>
+                <span className="text-white text-xs lg:text-sm font-medium">Pilih Pejabat Favorit</span>
               </div>
-              <div className="flex items-center gap-2 bg-red-600 border-2 border-white rounded-lg px-3 py-1.5">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                <span className="text-white text-sm font-bold">LIVE</span>
+              <div className="flex items-center gap-1.5 bg-red-600 border-2 border-white rounded-lg px-2 py-1">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                <span className="text-white text-xs font-bold">LIVE</span>
               </div>
             </div>
 
             {/* Right - Timer (Desktop) */}
-            <div className="hidden md:flex items-center justify-end gap-4">
+            <div className="hidden md:flex items-center justify-end">
               <div className="text-white">
-                <p className="text-xs text-gray-300 mb-2 text-right">Waktu Tersisa</p>
-                <div className="flex items-end gap-3">
+                <p className="text-xs text-gray-300 mb-1 text-right">Waktu Tersisa</p>
+                <div className="flex items-end gap-2">
                   <div className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-white leading-none mb-1">
+                    <div className="text-xl lg:text-2xl font-bold text-white leading-none mb-0.5">
                       {String(timeRemaining.hours).padStart(2, '0')}
                     </div>
                     <div className="text-xs text-gray-300">Jam</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-white leading-none mb-1">
+                    <div className="text-xl lg:text-2xl font-bold text-white leading-none mb-0.5">
                       {String(timeRemaining.minutes).padStart(2, '0')}
                     </div>
                     <div className="text-xs text-gray-300">Menit</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-white leading-none mb-1">
+                    <div className="text-xl lg:text-2xl font-bold text-white leading-none mb-0.5">
                       {String(timeRemaining.seconds).padStart(2, '0')}
                     </div>
                     <div className="text-xs text-gray-300">Detik</div>
@@ -464,24 +464,24 @@ function ResultsPageContent() {
           </div>
 
           {/* Timer - Mobile only */}
-          <div className="flex md:hidden items-center justify-center mt-4">
-            <div className="text-white text-center">
-              <p className="text-sm text-gray-300 mb-3">Waktu Tersisa</p>
-              <div className="flex items-end gap-4 justify-center">
+          <div className="flex md:hidden items-center justify-center mt-2">
+            <div className="text-white">
+              <p className="text-xs text-gray-300 mb-1 text-center">Waktu Tersisa</p>
+              <div className="flex items-end gap-2 justify-center">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-white leading-none mb-1">
+                  <div className="text-xl font-bold text-white leading-none mb-0.5">
                     {String(timeRemaining.hours).padStart(2, '0')}
                   </div>
                   <div className="text-xs text-gray-300">Jam</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-white leading-none mb-1">
+                  <div className="text-xl font-bold text-white leading-none mb-0.5">
                     {String(timeRemaining.minutes).padStart(2, '0')}
                   </div>
                   <div className="text-xs text-gray-300">Menit</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-white leading-none mb-1">
+                  <div className="text-xl font-bold text-white leading-none mb-0.5">
                     {String(timeRemaining.seconds).padStart(2, '0')}
                   </div>
                   <div className="text-xs text-gray-300">Detik</div>
@@ -493,43 +493,71 @@ function ResultsPageContent() {
       </div>
 
       {/* Main Content Card */}
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
-        <div className="bg-gray-100 rounded-3xl shadow-2xl p-6 md:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+      <div className="flex-1 max-w-7xl mx-auto px-4 py-3 lg:py-4 w-full overflow-hidden">
+        <div className="bg-gray-100 rounded-2xl shadow-2xl p-4 lg:p-6 h-full overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 lg:gap-6 h-full">
             {/* Left Panel - QR Code */}
-            <div className="flex flex-col items-center justify-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 text-center">
+            <div className="flex flex-col items-center justify-start">
+              <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 text-center">
                 Scan QR Code untuk Vote
               </h2>
-              <p className="text-gray-600 mb-6 text-center">
+              <p className="text-gray-600 text-sm mb-3 text-center">
                 Arahkan kamera perangkat Anda ke kode & mulai!
               </p>
               {qrCodeValue ? (
-                <div className="bg-white p-4 rounded-2xl shadow-lg">
-                  <QRCode value={qrCodeValue} size={280} />
+                <div className="bg-white p-3 rounded-2xl shadow-lg">
+                  <QRCode value={qrCodeValue} size={200} />
                 </div>
               ) : (
-                <div className="w-[280px] h-[280px] bg-gray-200 rounded-2xl flex items-center justify-center">
-                  <p className="text-gray-500">QR Code tidak tersedia</p>
+                <div className="w-[200px] h-[200px] bg-gray-200 rounded-2xl flex items-center justify-center">
+                  <p className="text-gray-500 text-sm">QR Code tidak tersedia</p>
                 </div>
               )}
             </div>
 
             {/* Right Panel - Results */}
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            <div className="flex flex-col min-h-0">
+              <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-1">
                 Hasil Vote Saat Ini
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 text-sm mb-3">
                 Pantau perkembangan pemilihan yang sedang berlangsung.
               </p>
 
               {/* Category Tabs */}
               {categoryResults.length > 0 ? (
                 <div>
-                  {/* Tabs - Scrollable on mobile */}
-                  <div className="mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                    <div className="flex gap-2 min-w-max md:flex-wrap">
+                  {/* Mobile Dropdown */}
+                  <div className="md:hidden mb-6">
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Pilih Kategori:
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={activeCategoryTab || ''}
+                        onChange={(e) => {
+                          setActiveCategoryTab(e.target.value)
+                          activeCategoryTabRef.current = e.target.value
+                        }}
+                        className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-200 rounded-xl text-gray-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer shadow-sm hover:border-gray-300 transition-all"
+                      >
+                        {categoryResults.map((categoryResult) => (
+                          <option key={categoryResult.category.id} value={categoryResult.category.id}>
+                            {categoryResult.category.name} ({categoryResult.totalVotes} suara)
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop Tabs */}
+                  <div className="hidden md:block mb-3">
+                    <div className="flex gap-2 flex-wrap">
                       {categoryResults.map((categoryResult) => (
                         <button
                           key={categoryResult.category.id}
@@ -537,13 +565,16 @@ function ResultsPageContent() {
                             setActiveCategoryTab(categoryResult.category.id)
                             activeCategoryTabRef.current = categoryResult.category.id
                           }}
-                          className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                          className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
                             activeCategoryTab === categoryResult.category.id
-                              ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-blue-300'
                           }`}
                         >
-                          {categoryResult.category.name}
+                          <div className="flex items-center gap-2">
+                            <span>{categoryResult.category.name}</span>
+                            <span className="text-xs opacity-80">({categoryResult.totalVotes})</span>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -556,21 +587,20 @@ function ResultsPageContent() {
                     const candidates = categoryResult.candidates
 
                     return (
-                      <div key={categoryResult.category.id} className="space-y-4 animate-fadeIn">
+                      <div key={categoryResult.category.id} className="space-y-2 animate-fadeIn">
                         {/* Category Stats */}
-                        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+                        <div className="grid grid-cols-2 gap-2 mb-3">
                           {/* Total Suara Card */}
-                          <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 border border-slate-200/50">
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 to-transparent opacity-50"></div>
-                            <div className="relative p-3 sm:p-4 md:p-5">
-                              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                          <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-xl shadow-sm border border-slate-200/50">
+                            <div className="relative p-2.5">
+                              <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-1 sm:mb-2">Total Suara</p>
-                                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.totalVotes}</p>
+                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Total Suara</p>
+                                  <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none">{categoryResult.totalVotes}</p>
                                 </div>
-                                <div className="flex-shrink-0 ml-2 sm:ml-3">
-                                  <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-purple-100 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                    <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="flex-shrink-0 ml-2">
+                                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                     </svg>
                                   </div>
@@ -580,23 +610,22 @@ function ResultsPageContent() {
                           </div>
 
                           {/* Kemajuan Voting Card */}
-                          <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 border border-blue-200/50">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-transparent opacity-50"></div>
-                            <div className="relative p-3 sm:p-4 md:p-5">
-                              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                          <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200/50">
+                            <div className="relative p-2.5">
+                              <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-1 sm:mb-2">Kemajuan Voting</p>
-                                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-none mb-1 sm:mb-2">{categoryResult.votingProgress}%</p>
-                                  <div className="w-full bg-blue-100 rounded-full h-1.5 sm:h-2">
+                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Kemajuan</p>
+                                  <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.votingProgress}%</p>
+                                  <div className="w-full bg-blue-100 rounded-full h-1.5">
                                     <div 
-                                      className="bg-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out"
+                                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-500 ease-out"
                                       style={{ width: `${categoryResult.votingProgress}%` }}
                                     ></div>
                                   </div>
                                 </div>
-                                <div className="flex-shrink-0 ml-2 sm:ml-3">
-                                  <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center">
-                                    <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="flex-shrink-0 ml-2">
+                                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                   </div>
@@ -606,49 +635,49 @@ function ResultsPageContent() {
                           </div>
                         </div>
 
-                        {/* Candidate Results */}
+                        {/* Candidate Results - Scrollable Container */}
                         {candidates.length === 0 ? (
-                          <div className="text-center py-12 text-gray-500 bg-white rounded-xl">
+                          <div className="text-center py-8 text-gray-500 bg-white rounded-xl text-sm">
                             Belum ada hasil voting untuk kategori ini
                           </div>
                         ) : (
-                          <div className="space-y-4">
+                          <div className="space-y-2 max-h-[calc(100vh-420px)] lg:max-h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
                             {candidates.map((candidate, index) => (
                               <div
                                 key={candidate.id}
-                                className={`bg-white rounded-xl p-4 md:p-5 shadow-md transition-all hover:shadow-lg ${
+                                className={`bg-white rounded-lg p-2.5 shadow-sm transition-all hover:shadow-md ${
                                   index === 0 && candidate.vote_count > 0
                                     ? 'border-2 border-yellow-400'
                                     : 'border border-gray-200'
                                 }`}
                               >
-                                <div className="flex items-center gap-4 mb-3">
+                                <div className="flex items-center gap-3 mb-2">
                                   <div className="flex-shrink-0">
                                     {candidate.photo_url ? (
                                       <Image
                                         src={candidate.photo_url}
                                         alt={candidate.name}
-                                        width={64}
-                                        height={64}
-                                        className="rounded-full object-cover w-14 h-14 md:w-16 md:h-16"
+                                        width={48}
+                                        height={48}
+                                        className="rounded-full object-cover w-12 h-12"
                                       />
                                     ) : (
-                                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xl md:text-2xl">
+                                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
                                         👤
                                       </div>
                                     )}
                                   </div>
                                   
                                   <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-bold text-gray-900 truncate">
+                                    <h3 className="text-sm font-bold text-gray-900 truncate">
                                       {candidate.name}
                                     </h3>
                                     {candidate.description && (
-                                      <p className="text-sm text-gray-600 truncate">{candidate.description}</p>
+                                      <p className="text-xs text-gray-600 truncate">{candidate.description}</p>
                                     )}
                                   </div>
                                   <div className="text-right flex-shrink-0">
-                                    <p className="text-2xl font-bold text-gray-900">
+                                    <p className="text-lg font-bold text-gray-900">
                                       {candidate.percentage.toFixed(0)}%
                                     </p>
                                     <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
@@ -656,9 +685,9 @@ function ResultsPageContent() {
                                 </div>
                                 
                                 {/* Progress Bar */}
-                                <div className="w-full bg-gray-200 rounded-full h-3">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div
-                                    className={`h-3 rounded-full transition-all ${
+                                    className={`h-2 rounded-full transition-all ${
                                       index === 0 && candidate.vote_count > 0
                                         ? 'bg-yellow-400'
                                         : 'bg-blue-500'

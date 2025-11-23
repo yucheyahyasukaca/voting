@@ -10,6 +10,7 @@ import { formatDate } from '@/lib/utils'
 import { getVotingUrl } from '@/lib/app-url'
 import Image from 'next/image'
 import QRCode from '@/components/QRCode'
+import AdminLayout from '@/components/AdminLayout'
 
 interface Election {
   id: string
@@ -539,9 +540,14 @@ export default function ElectionDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 font-medium">Memuat data pemilihan...</p>
+          </div>
+        </div>
+      </AdminLayout>
     )
   }
 
@@ -552,41 +558,58 @@ export default function ElectionDetailPage() {
     : ''
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto">
         <Link
           href="/admin"
-          className="text-blue-600 hover:underline mb-6 inline-block"
+          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6 group"
         >
-          ← Kembali ke Dashboard
+          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Kembali ke Dashboard
         </Link>
 
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{election.title}</h1>
-          {election.description && (
-            <p className="text-gray-600 mb-4">{election.description}</p>
-          )}
-          <div className="flex items-center gap-4 flex-wrap">
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                election.is_active
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
-              }`}
-            >
-              {election.is_active ? 'Aktif' : 'Tidak Aktif'}
-            </span>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                election.allow_view_results
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-orange-100 text-orange-800'
-              }`}
-            >
-              {election.allow_view_results ? 'Hasil Live: Diizinkan' : 'Hasil Live: Diblokir'}
-            </span>
+        <div className="bg-gradient-to-br from-white to-blue-50/30 rounded-2xl shadow-xl border border-gray-100 p-8 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{election.title}</h1>
+              {election.description && (
+                <p className="text-gray-600 mb-6 text-lg">{election.description}</p>
+              )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span
+                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${
+                    election.is_active
+                      ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
+                      : 'bg-gray-100 text-gray-600 ring-2 ring-gray-200'
+                  }`}
+                >
+                  {election.is_active ? (
+                    <>
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      Aktif
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                      Tidak Aktif
+                    </>
+                  )}
+                </span>
+                <span
+                  className={`px-4 py-2 rounded-xl text-sm font-bold ${
+                    election.allow_view_results
+                      ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-200'
+                      : 'bg-orange-100 text-orange-700 ring-2 ring-orange-200'
+                  }`}
+                >
+                  {election.allow_view_results ? '👁️ Hasil Live: Diizinkan' : '🔒 Hasil Live: Diblokir'}
+                </span>
+              </div>
+            </div>
             {election.hero_banner_url && (
-              <div className="relative w-32 h-20 rounded overflow-hidden">
+              <div className="relative w-full lg:w-64 h-40 rounded-2xl overflow-hidden shadow-lg ring-2 ring-gray-200">
                 <Image
                   src={election.hero_banner_url}
                   alt="Banner"
@@ -598,11 +621,17 @@ export default function ElectionDetailPage() {
           </div>
           
           {/* Toggle Allow View Results */}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-900">Izinkan Melihat Hasil Live</h3>
-                <p className="text-sm text-gray-600 mt-1">
+          <div className="mt-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <h3 className="font-bold text-gray-900">Izinkan Melihat Hasil Live</h3>
+                </div>
+                <p className="text-sm text-gray-600">
                   Jika diaktifkan, voter dapat melihat hasil voting secara real-time. Jika dinonaktifkan, voter akan melihat pesan bahwa hasil belum diizinkan untuk dilihat.
                 </p>
               </div>
@@ -643,13 +672,13 @@ export default function ElectionDetailPage() {
                     alert('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
                   }
                 }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  election.allow_view_results ? 'bg-blue-600' : 'bg-gray-300'
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-all shadow-md flex-shrink-0 ${
+                  election.allow_view_results ? 'bg-blue-600' : 'bg-gray-400'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    election.allow_view_results ? 'translate-x-6' : 'translate-x-1'
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                    election.allow_view_results ? 'translate-x-8' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -658,48 +687,82 @@ export default function ElectionDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-6 overflow-hidden">
+          {/* Mobile Dropdown */}
+          <div className="md:hidden p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <div className="relative">
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value as 'categories' | 'candidates' | 'qr' | 'results')}
+                className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-200 rounded-xl text-gray-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer shadow-sm hover:border-gray-300 transition-all"
+              >
+                <option value="categories">📑 Kategori</option>
+                <option value="candidates">👥 Kandidat</option>
+                <option value="qr">📱 QR Code</option>
+                <option value="results">📊 Hasil Voting</option>
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Tabs */}
+          <div className="hidden md:block border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('categories')}
-                className={`px-6 py-3 font-medium text-sm border-b-2 ${
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
                   activeTab === 'categories'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Kategori
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>Kategori</span>
               </button>
               <button
                 onClick={() => setActiveTab('candidates')}
-                className={`px-6 py-3 font-medium text-sm border-b-2 ${
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
                   activeTab === 'candidates'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Kandidat
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span>Kandidat</span>
               </button>
               <button
                 onClick={() => setActiveTab('qr')}
-                className={`px-6 py-3 font-medium text-sm border-b-2 ${
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
                   activeTab === 'qr'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                QR Code
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                <span>QR Code</span>
               </button>
               <button
                 onClick={() => setActiveTab('results')}
-                className={`px-6 py-3 font-medium text-sm border-b-2 ${
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
                   activeTab === 'results'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Hasil Voting
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Hasil Voting</span>
               </button>
             </nav>
           </div>
@@ -707,36 +770,48 @@ export default function ElectionDetailPage() {
           <div className="p-6">
             {activeTab === 'categories' && (
               <div>
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                   <h2 className="text-xl font-bold text-gray-900">Daftar Kategori</h2>
                   <Link
                     href={`/admin/elections/${electionId}/categories/new`}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium text-center shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                   >
-                    + Tambah Kategori
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Kategori
                   </Link>
                 </div>
 
                 {categories.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">Belum ada kategori</p>
+                  <div className="text-center py-12 px-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                    </div>
+                    <p className="text-lg font-medium text-gray-900 mb-2">Belum ada kategori</p>
+                    <p className="text-gray-600 mb-6">Mulai dengan membuat kategori pertama</p>
                     <Link
                       href={`/admin/elections/${electionId}/categories/new`}
-                      className="text-blue-600 hover:underline"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-lg hover:shadow-xl transition-all"
                     >
-                      Tambah kategori pertama
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tambah Kategori Pertama
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {categories.map((category) => (
                       <div
                         key={category.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                        className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all hover:border-blue-300"
                       >
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">
                               {category.name}
                             </h3>
                             {category.description && (
@@ -746,19 +821,19 @@ export default function ElectionDetailPage() {
                             )}
                           </div>
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold ${
                               category.is_active
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
+                                : 'bg-gray-100 text-gray-600'
                             }`}
                           >
-                            {category.is_active ? 'Aktif' : 'Nonaktif'}
+                            {category.is_active ? '● Aktif' : '○ Nonaktif'}
                           </span>
                         </div>
-                        <div className="flex gap-2 mt-4">
+                        <div className="flex flex-col sm:flex-row gap-2 mt-4">
                           <Link
                             href={`/admin/elections/${electionId}/categories/${category.id}`}
-                            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center text-sm font-medium"
+                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 text-center text-sm font-medium shadow-md hover:shadow-lg transition-all"
                           >
                             Edit
                           </Link>
@@ -779,8 +854,11 @@ export default function ElectionDetailPage() {
                                 alert('Terjadi kesalahan')
                               }
                             }}
-                            className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+                            className="flex-1 sm:flex-none px-4 py-2.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-sm font-medium border border-red-200 transition-all flex items-center justify-center gap-2"
                           >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                             Hapus
                           </button>
                         </div>
@@ -793,49 +871,61 @@ export default function ElectionDetailPage() {
 
             {activeTab === 'candidates' && (
               <div>
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                   <h2 className="text-xl font-bold text-gray-900">Daftar Kandidat</h2>
                   <Link
                     href={`/admin/elections/${electionId}/candidates/new`}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium text-center shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                   >
-                    + Tambah Kandidat
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Kandidat
                   </Link>
                 </div>
 
                 {candidates.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="mb-4">Belum ada kandidat</p>
+                  <div className="text-center py-12 px-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-lg font-medium text-gray-900 mb-2">Belum ada kandidat</p>
+                    <p className="text-gray-600 mb-6">Mulai dengan membuat kandidat pertama</p>
                     <Link
                       href={`/admin/elections/${electionId}/candidates/new`}
-                      className="text-blue-600 hover:underline"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-lg hover:shadow-xl transition-all"
                     >
-                      Tambah kandidat pertama
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Tambah Kandidat Pertama
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {candidates.map((candidate) => (
                       <div
                         key={candidate.id}
-                        className="border border-gray-200 rounded-lg p-4"
+                        className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all hover:border-blue-300"
                       >
                         <div className="flex items-center gap-4 mb-4">
                           {candidate.photo_url ? (
                             <Image
                               src={candidate.photo_url}
                               alt={candidate.name}
-                              width={60}
-                              height={60}
-                              className="rounded-full object-cover"
+                              width={64}
+                              height={64}
+                              className="rounded-full object-cover ring-2 ring-gray-200"
                             />
                           ) : (
-                            <div className="w-15 h-15 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
-                              👤
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-gray-400 ring-2 ring-gray-200">
+                              <span className="text-3xl">👤</span>
                             </div>
                           )}
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 truncate">
                               {candidate.name}
                             </h3>
                             {candidate.description && (
@@ -845,17 +935,20 @@ export default function ElectionDetailPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Link
                             href={`/admin/elections/${electionId}/candidates/${candidate.id}`}
-                            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded text-center text-sm font-medium hover:bg-blue-700"
+                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 text-center text-sm font-medium shadow-md hover:shadow-lg transition-all"
                           >
                             Edit
                           </Link>
                           <button
                             onClick={() => deleteCandidate(candidate.id)}
-                            className="px-3 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700"
+                            className="flex-1 sm:flex-none px-4 py-2.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-sm font-medium border border-red-200 transition-all flex items-center justify-center gap-2"
                           >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                             Hapus
                           </button>
                         </div>
@@ -1172,7 +1265,7 @@ export default function ElectionDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 

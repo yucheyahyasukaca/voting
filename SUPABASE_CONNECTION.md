@@ -65,3 +65,4 @@ DELETE FROM elections;
 
 Atau gunakan halaman `/reset-data` di aplikasi (jika tersedia).
 
+
