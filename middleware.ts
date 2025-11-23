@@ -1,11 +1,40 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Simple middleware for basic route protection
-// In production, implement proper authentication
-export function middleware(request: NextRequest) {
-  // Allow all routes for now
-  // You can add authentication logic here later
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  
+  // Protected admin routes
+  if (pathname.startsWith('/admin')) {
+    // Create Supabase client for middleware
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    
+    const response = NextResponse.next()
+    
+    // Create supabase client with cookies
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+      },
+    })
+
+    // Get session from cookies
+    const sessionToken = request.cookies.get('sb-access-token')?.value
+    
+    if (!sessionToken) {
+      // No session, redirect to login
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    
+    // Session exists, allow access
+    return response
+  }
+
+  // Allow all other routes
   return NextResponse.next()
 }
 
@@ -17,8 +46,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - login (login page)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|login).*)',
   ],
 }
 

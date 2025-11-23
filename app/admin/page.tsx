@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { isAuthenticated, signOut } from '@/lib/auth'
 
 interface Election {
   id: string
@@ -23,10 +25,21 @@ export default function AdminPage() {
     election: null,
   })
   const [deleting, setDeleting] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
-    loadElections()
+    checkAuth()
   }, [])
+
+  const checkAuth = async () => {
+    const authenticated = await isAuthenticated()
+    if (!authenticated) {
+      router.push('/login')
+      return
+    }
+    loadElections()
+  }
 
   const loadElections = async () => {
     try {
@@ -94,6 +107,19 @@ export default function AdminPage() {
     }
   }
 
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await signOut()
+      router.push('/login')
+      router.refresh()
+    } catch (err) {
+      console.error('Error logging out:', err)
+      alert('Gagal logout')
+      setLoggingOut(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -107,12 +133,21 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Admin</h1>
-          <Link
-            href="/admin/elections/new"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-          >
-            + Buat Pemilihan Baru
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/admin/elections/new"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            >
+              + Buat Pemilihan Baru
+            </Link>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loggingOut ? 'Logging out...' : 'Logout'}
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

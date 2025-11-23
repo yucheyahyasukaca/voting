@@ -11,16 +11,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('See CARA_SETUP_ENV.txt for instructions')
 }
 
-// Create Supabase client
-// Note: If env vars are missing, createClient will use placeholder values
-// Operations will fail until proper credentials are provided
+// Create Supabase client with persistent session for authentication
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'dummy-key',
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
   }
 )
