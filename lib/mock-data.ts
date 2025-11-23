@@ -8,6 +8,7 @@ export interface MockElection {
   start_date: string | null
   end_date: string | null
   is_active: boolean
+  allow_view_results: boolean
   created_at: string
   updated_at: string
 }
@@ -26,6 +27,7 @@ export interface MockCandidate {
 export interface MockVote {
   id: string
   election_id: string
+  category_id: string | null
   candidate_id: string
   voter_token: string
   created_at: string
@@ -40,12 +42,25 @@ export interface MockVotingSession {
   expires_at: string | null
 }
 
+export interface MockCategory {
+  id: string
+  election_id: string
+  name: string
+  description: string | null
+  icon_url: string | null
+  order_index: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 // Storage keys
 const STORAGE_KEYS = {
   elections: 'mock_elections',
   candidates: 'mock_candidates',
   votes: 'mock_votes',
   sessions: 'mock_sessions',
+  categories: 'mock_categories',
 }
 
 // Initialize with sample data
@@ -58,6 +73,7 @@ const getInitialData = () => {
     start_date: new Date().toISOString(),
     end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     is_active: true,
+    allow_view_results: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }
@@ -187,6 +203,9 @@ class MockQueryBuilder {
           saveToStorage(STORAGE_KEYS.candidates, data)
         }
         break
+      case 'categories':
+        data = getFromStorage<MockCategory[]>(STORAGE_KEYS.categories, [])
+        break
       case 'votes':
         data = getFromStorage<MockVote[]>(STORAGE_KEYS.votes, [])
         break
@@ -284,18 +303,50 @@ export const mockSupabase = {
               saveToStorage(STORAGE_KEYS.candidates, candidates)
               break
 
-            case 'votes':
-              const votes = getFromStorage<MockVote[]>(STORAGE_KEYS.votes, [])
-              // Check for duplicate
-              const existing = votes.find(
-                (v) => v.election_id === data.election_id && v.voter_token === data.voter_token
-              )
-              if (existing) {
-                return { data: null, error: { code: '23505', message: 'Duplicate vote' } }
-              }
+            case 'categories':
+              const categories = getFromStorage<MockCategory[]>(STORAGE_KEYS.categories, [])
               newItem = {
                 id: Date.now().toString(),
                 election_id: data.election_id || '',
+                name: data.name || '',
+                description: data.description || null,
+                icon_url: data.icon_url || null,
+                order_index: data.order_index ?? 0,
+                is_active: data.is_active ?? true,
+                created_at: now,
+                updated_at: now,
+              }
+              categories.push(newItem)
+              saveToStorage(STORAGE_KEYS.categories, categories)
+              break
+
+            case 'votes':
+              const votes = getFromStorage<MockVote[]>(STORAGE_KEYS.votes, [])
+              // Check existing votes for this voter in this election and category
+              const existingVotes = votes.filter(
+                (v) => 
+                  v.election_id === data.election_id && 
+                  v.voter_token === data.voter_token &&
+                  v.category_id === (data.category_id || null)
+              )
+              
+              // Allow up to 2 votes per voter per category
+              if (existingVotes.length >= 2) {
+                return { data: null, error: { code: '23505', message: 'Maximum votes reached' } }
+              }
+              
+              // Check if voter is trying to vote for the same candidate twice
+              const duplicateCandidate = existingVotes.find(
+                (v) => v.candidate_id === data.candidate_id
+              )
+              if (duplicateCandidate) {
+                return { data: null, error: { code: '23505', message: 'Cannot vote for the same candidate twice' } }
+              }
+              
+              newItem = {
+                id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9),
+                election_id: data.election_id || '',
+                category_id: data.category_id || null,
                 candidate_id: data.candidate_id || '',
                 voter_token: data.voter_token || '',
                 created_at: now,
@@ -334,7 +385,12 @@ export const mockSupabase = {
               const elections = getFromStorage<MockElection[]>(STORAGE_KEYS.elections, [])
               const electionIndex = elections.findIndex((e: any) => e[column] === value)
               if (electionIndex !== -1) {
-                elections[electionIndex] = { ...elections[electionIndex], ...data, updated_at: now }
+                elections[electionIndex] = { 
+                  ...elections[electionIndex], 
+                  ...data, 
+                  allow_view_results: data.allow_view_results !== undefined ? data.allow_view_results : elections[electionIndex].allow_view_results,
+                  updated_at: now 
+                }
                 updated = elections[electionIndex]
                 saveToStorage(STORAGE_KEYS.elections, elections)
               }
@@ -347,6 +403,16 @@ export const mockSupabase = {
                 candidates[candidateIndex] = { ...candidates[candidateIndex], ...data, updated_at: now }
                 updated = candidates[candidateIndex]
                 saveToStorage(STORAGE_KEYS.candidates, candidates)
+              }
+              break
+
+            case 'categories':
+              const categories = getFromStorage<MockCategory[]>(STORAGE_KEYS.categories, [])
+              const categoryIndex = categories.findIndex((c: any) => c[column] === value)
+              if (categoryIndex !== -1) {
+                categories[categoryIndex] = { ...categories[categoryIndex], ...data, updated_at: now }
+                updated = categories[categoryIndex]
+                saveToStorage(STORAGE_KEYS.categories, categories)
               }
               break
 
@@ -381,6 +447,12 @@ export const mockSupabase = {
               const candidates = getFromStorage<MockCandidate[]>(STORAGE_KEYS.candidates, [])
               const filteredCandidates = candidates.filter((c: any) => c[column] !== value)
               saveToStorage(STORAGE_KEYS.candidates, filteredCandidates)
+              break
+
+            case 'categories':
+              const categories = getFromStorage<MockCategory[]>(STORAGE_KEYS.categories, [])
+              const filteredCategories = categories.filter((c: any) => c[column] !== value)
+              saveToStorage(STORAGE_KEYS.categories, filteredCategories)
               break
           }
 

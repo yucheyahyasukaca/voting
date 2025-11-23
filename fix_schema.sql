@@ -1,8 +1,11 @@
--- Enable UUID extension
+-- Schema untuk Supabase - Skip jika sudah ada
+-- File ini akan membuat tabel jika belum ada
+
+-- Enable UUID extension (skip if exists)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Elections table
-CREATE TABLE elections (
+-- Elections table (skip if exists)
+CREATE TABLE IF NOT EXISTS elections (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,
   description TEXT,
@@ -15,8 +18,8 @@ CREATE TABLE elections (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Candidates table
-CREATE TABLE candidates (
+-- Candidates table (skip if exists)
+CREATE TABLE IF NOT EXISTS candidates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -27,8 +30,8 @@ CREATE TABLE candidates (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Categories table
-CREATE TABLE categories (
+-- Categories table (skip if exists)
+CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -40,7 +43,9 @@ CREATE TABLE categories (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Votes table
+-- Votes table - Drop and recreate to fix structure
+DROP TABLE IF EXISTS votes CASCADE;
+
 CREATE TABLE votes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
@@ -51,11 +56,8 @@ CREATE TABLE votes (
   UNIQUE(election_id, category_id, voter_token)
 );
 
--- Add comment
-COMMENT ON TABLE votes IS 'Stores individual votes. voter_token is the QR code used to vote, ensuring one vote per QR code per election.';
-
--- Voting sessions table (for QR code tracking)
-CREATE TABLE voting_sessions (
+-- Voting sessions table (skip if exists)
+CREATE TABLE IF NOT EXISTS voting_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   election_id UUID REFERENCES elections(id) ON DELETE CASCADE,
   qr_code TEXT NOT NULL UNIQUE,
@@ -64,23 +66,23 @@ CREATE TABLE voting_sessions (
   expires_at TIMESTAMPTZ
 );
 
--- Users table (for admin)
-CREATE TABLE users (
+-- Users table (skip if exists)
+CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT UNIQUE NOT NULL,
   role TEXT DEFAULT 'voter',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Indexes for performance
-CREATE INDEX idx_votes_election_id ON votes(election_id);
-CREATE INDEX idx_votes_candidate_id ON votes(candidate_id);
-CREATE INDEX idx_votes_voter_token ON votes(voter_token);
-CREATE INDEX idx_votes_category_id ON votes(category_id);
-CREATE INDEX idx_candidates_election_id ON candidates(election_id);
-CREATE INDEX idx_categories_election_id ON categories(election_id);
-CREATE INDEX idx_voting_sessions_qr_code ON voting_sessions(qr_code);
-CREATE INDEX idx_voting_sessions_election_id ON voting_sessions(election_id);
+-- Indexes (skip if exists)
+CREATE INDEX IF NOT EXISTS idx_votes_election_id ON votes(election_id);
+CREATE INDEX IF NOT EXISTS idx_votes_candidate_id ON votes(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_votes_voter_token ON votes(voter_token);
+CREATE INDEX IF NOT EXISTS idx_votes_category_id ON votes(category_id);
+CREATE INDEX IF NOT EXISTS idx_candidates_election_id ON candidates(election_id);
+CREATE INDEX IF NOT EXISTS idx_categories_election_id ON categories(election_id);
+CREATE INDEX IF NOT EXISTS idx_voting_sessions_qr_code ON voting_sessions(qr_code);
+CREATE INDEX IF NOT EXISTS idx_voting_sessions_election_id ON voting_sessions(election_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -91,20 +93,20 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Triggers for updated_at
+-- Triggers (drop and recreate)
+DROP TRIGGER IF EXISTS update_elections_updated_at ON elections;
 CREATE TRIGGER update_elections_updated_at BEFORE UPDATE ON elections
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_candidates_updated_at ON candidates;
 CREATE TRIGGER update_candidates_updated_at BEFORE UPDATE ON candidates
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_categories_updated_at ON categories;
 CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ============================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ============================================
--- Enable RLS on all tables for security
+-- Enable RLS on all tables
 ALTER TABLE elections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
@@ -112,8 +114,28 @@ ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE voting_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
--- Elections: Public read and write access (anon key)
--- Note: Untuk produksi, pertimbangkan untuk menambahkan autentikasi admin
+-- Drop existing policies if any (to avoid conflicts)
+DROP POLICY IF EXISTS "Elections are viewable by everyone" ON elections;
+DROP POLICY IF EXISTS "Elections can be inserted by anyone" ON elections;
+DROP POLICY IF EXISTS "Elections can be updated by anyone" ON elections;
+DROP POLICY IF EXISTS "Candidates are viewable by everyone" ON candidates;
+DROP POLICY IF EXISTS "Candidates can be inserted by anyone" ON candidates;
+DROP POLICY IF EXISTS "Candidates can be updated by anyone" ON candidates;
+DROP POLICY IF EXISTS "Candidates can be deleted by anyone" ON candidates;
+DROP POLICY IF EXISTS "Categories are viewable by everyone" ON categories;
+DROP POLICY IF EXISTS "Categories can be inserted by anyone" ON categories;
+DROP POLICY IF EXISTS "Categories can be updated by anyone" ON categories;
+DROP POLICY IF EXISTS "Categories can be deleted by anyone" ON categories;
+DROP POLICY IF EXISTS "Votes are viewable by everyone" ON votes;
+DROP POLICY IF EXISTS "Votes can be inserted by anyone" ON votes;
+DROP POLICY IF EXISTS "Voting sessions are viewable by everyone" ON voting_sessions;
+DROP POLICY IF EXISTS "Voting sessions can be inserted by anyone" ON voting_sessions;
+DROP POLICY IF EXISTS "Voting sessions can be updated by anyone" ON voting_sessions;
+DROP POLICY IF EXISTS "Users are viewable by everyone" ON users;
+DROP POLICY IF EXISTS "Users can be inserted by anyone" ON users;
+DROP POLICY IF EXISTS "Users can be updated by anyone" ON users;
+
+-- Create RLS Policies
 CREATE POLICY "Elections are viewable by everyone" ON elections
     FOR SELECT USING (true);
 
@@ -123,7 +145,6 @@ CREATE POLICY "Elections can be inserted by anyone" ON elections
 CREATE POLICY "Elections can be updated by anyone" ON elections
     FOR UPDATE USING (true);
 
--- Candidates: Public read and write access (anon key)
 CREATE POLICY "Candidates are viewable by everyone" ON candidates
     FOR SELECT USING (true);
 
@@ -136,7 +157,6 @@ CREATE POLICY "Candidates can be updated by anyone" ON candidates
 CREATE POLICY "Candidates can be deleted by anyone" ON candidates
     FOR DELETE USING (true);
 
--- Categories: Public read and write access (anon key)
 CREATE POLICY "Categories are viewable by everyone" ON categories
     FOR SELECT USING (true);
 
@@ -149,14 +169,12 @@ CREATE POLICY "Categories can be updated by anyone" ON categories
 CREATE POLICY "Categories can be deleted by anyone" ON categories
     FOR DELETE USING (true);
 
--- Votes: Public read for results, anyone can insert (voting), no updates/deletes
 CREATE POLICY "Votes are viewable by everyone" ON votes
     FOR SELECT USING (true);
 
 CREATE POLICY "Votes can be inserted by anyone" ON votes
     FOR INSERT WITH CHECK (true);
 
--- Voting sessions: Public read and write access (anon key)
 CREATE POLICY "Voting sessions are viewable by everyone" ON voting_sessions
     FOR SELECT USING (true);
 
@@ -166,8 +184,6 @@ CREATE POLICY "Voting sessions can be inserted by anyone" ON voting_sessions
 CREATE POLICY "Voting sessions can be updated by anyone" ON voting_sessions
     FOR UPDATE USING (true);
 
--- Users: Public read and write access (anon key)
--- Note: Untuk produksi, pertimbangkan untuk membatasi akses ke tabel users
 CREATE POLICY "Users are viewable by everyone" ON users
     FOR SELECT USING (true);
 
@@ -176,20 +192,4 @@ CREATE POLICY "Users can be inserted by anyone" ON users
 
 CREATE POLICY "Users can be updated by anyone" ON users
     FOR UPDATE USING (true);
-
--- ============================================
--- CATATAN PENTING TENTANG KEAMANAN
--- ============================================
--- RLS policies di atas mengizinkan semua operasi dengan anon key.
--- Ini memungkinkan aplikasi berjalan tanpa autentikasi yang kompleks.
---
--- UNTUK PRODUKSI, pertimbangkan untuk:
--- 1. Menambahkan autentikasi admin menggunakan Supabase Auth
--- 2. Membatasi policy INSERT/UPDATE/DELETE hanya untuk user yang terautentikasi
--- 3. Menggunakan service_role key hanya di server-side API routes
---
--- Contoh policy yang lebih aman:
---   CREATE POLICY "Elections can be inserted by authenticated admins" 
---   ON elections FOR INSERT 
---   WITH CHECK (auth.role() = 'authenticated' AND auth.jwt() ->> 'role' = 'admin');
 

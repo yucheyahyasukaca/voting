@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { supabase } from '@/lib/supabase-mock'
+import { supabase } from '@/lib/supabase'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -33,6 +33,25 @@ function VoterPageContent() {
   const [error, setError] = useState<string | null>(null)
   const [voterName] = useState('Jaclyn Lim')
   const [timeRemaining, setTimeRemaining] = useState({ hours: 12, minutes: 25, seconds: 44 })
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [greeting, setGreeting] = useState('')
+
+  // Get greeting based on local time
+  useEffect(() => {
+    const getGreeting = () => {
+      const hour = new Date().getHours()
+      if (hour >= 5 && hour < 12) {
+        return 'Selamat Pagi'
+      } else if (hour >= 12 && hour < 17) {
+        return 'Selamat Siang'
+      } else if (hour >= 17 && hour < 21) {
+        return 'Selamat Sore'
+      } else {
+        return 'Selamat Malam'
+      }
+    }
+    setGreeting(getGreeting())
+  }, [])
 
   useEffect(() => {
     if (!qrCode) {
@@ -88,15 +107,29 @@ function VoterPageContent() {
         return
       }
 
+      // Load election tanpa filter is_active dulu, untuk cek error lebih jelas
       const { data: electionData, error: electionError } = await supabase
         .from('elections')
         .select('*')
         .eq('id', session.election_id)
-        .eq('is_active', true)
         .single()
 
-      if (electionError || !electionData) {
-        setError('Pemilihan tidak ditemukan atau tidak aktif')
+      if (electionError) {
+        console.error('Error loading election:', electionError)
+        setError('Gagal memuat data pemilihan: ' + electionError.message)
+        setLoading(false)
+        return
+      }
+
+      if (!electionData) {
+        setError('Pemilihan tidak ditemukan')
+        setLoading(false)
+        return
+      }
+
+      // Cek apakah election aktif
+      if (!electionData.is_active) {
+        setError('Pemilihan saat ini tidak aktif. Silakan hubungi administrator untuk mengaktifkan pemilihan.')
         setLoading(false)
         return
       }
@@ -151,20 +184,21 @@ function VoterPageContent() {
 
   // Extract number from title
   const titleMatch = election.title.match(/(\d+)/)
-  const titleNumber = titleMatch ? titleMatch[1] : '23'
+  const titleNumber = titleMatch ? titleMatch[1] : '2025'
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      {/* Navigation Bar - Sesuai Referensi */}
-      <nav className="bg-black border-b border-gray-800">
+      {/* Navigation Bar */}
+      <nav className="bg-black border-b border-gray-800 relative z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-sm">DISDIKBUD</span>
+              <span className="text-white font-bold text-sm">JATENG</span>
               <span className="text-gray-500">|</span>
-              <span className="text-gray-400 text-sm">Panitia Pemilihan</span>
+              <span className="text-white text-sm font-medium">Pilih Pejabat Favorit</span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              {/* Desktop Menu */}
               <div className="hidden md:flex items-center gap-6">
                 <Link href={`/voter?qrcode=${qrCode}`} className="text-white text-sm font-medium pb-1 border-b-2 border-white">
                   Beranda
@@ -176,17 +210,72 @@ function VoterPageContent() {
                   Hasil Live
                 </Link>
               </div>
-              <button className="px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 border-2 border-gray-300">
+              
+              {/* Desktop Help Button */}
+              <button className="hidden md:block px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100">
                 Butuh bantuan?
+              </button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-white hover:bg-gray-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+                aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-800 pt-4 animate-fadeIn">
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={`/voter?qrcode=${qrCode}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white text-base font-medium py-3 px-4 hover:bg-gray-800 rounded-lg transition-colors border-l-4 border-white bg-gray-900/50"
+                >
+                  Beranda
+                </Link>
+                <Link
+                  href={`/voter?qrcode=${qrCode}&view=nominees`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-300 hover:text-white text-base font-medium py-3 px-4 hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Kandidat
+                </Link>
+                <Link
+                  href={`/voter/results?election=${election.id}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-300 hover:text-white text-base font-medium py-3 px-4 hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Hasil Live
+                </Link>
+                <button className="w-full mt-2 px-4 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
+                  Butuh bantuan?
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Hero Section - Sesuai Referensi */}
-      <div className="relative bg-black overflow-hidden">
-        {/* Background Image */}
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-black via-slate-950 to-black overflow-hidden">
+        {/* Animated Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/20 via-indigo-950/15 to-purple-950/10 animate-gradient"></div>
+        
+        {/* Background Image with Modern Overlay */}
         <div className="absolute inset-0">
           {election.hero_banner_url ? (
             <div className="relative w-full h-full">
@@ -194,101 +283,101 @@ function VoterPageContent() {
                 src={election.hero_banner_url}
                 alt="Banner"
                 fill
-                className="object-cover opacity-40"
-                style={{ filter: 'blur(8px)' }}
+                className="object-cover opacity-10"
+                style={{ filter: 'blur(12px) brightness(0.4)' }}
               />
             </div>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-900 via-gray-800 to-black"></div>
-          )}
+          ) : null}
         </div>
 
-        {/* Blue Checkmark Overlay - Large V Shape di kanan */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none">
+        {/* Modern Mesh Gradient Overlay - Darker */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.15),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(99,102,241,0.12),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(139,92,246,0.08),transparent_70%)]"></div>
+
+        {/* Modern Grid Pattern - Darker */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}></div>
+
+        {/* Animated Blue Abstract Shape - Modern Design - Darker */}
+        <div className="absolute right-0 top-0 bottom-0 w-1/2 pointer-events-none overflow-hidden">
           <svg
             className="w-full h-full"
             viewBox="0 0 500 600"
             preserveAspectRatio="none"
           >
+            <defs>
+              <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.2" />
+                <stop offset="50%" stopColor="#6366F1" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
             <path
-              d="M 0 0 L 300 300 L 0 600 L 500 600 L 500 0 Z"
-              fill="#3B82F6"
-              opacity="0.25"
+              d="M 0 0 L 250 200 L 0 400 L 500 600 L 500 0 Z"
+              fill="url(#blueGradient)"
+            />
+            <path
+              d="M 0 100 L 200 250 L 0 500 L 500 600 L 500 100 Z"
+              fill="url(#blueGradient)"
+              opacity="0.5"
             />
           </svg>
         </div>
 
+        {/* Animated Orbs/Blobs - Darker */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/8 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-indigo-500/6 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
         {/* Content */}
-        <div className="relative z-10 px-4 py-12 min-h-[500px] flex items-center">
+        <div className="relative z-10 px-4 py-12 sm:py-16 md:py-20 min-h-[500px] sm:min-h-[600px] md:min-h-[650px] flex items-center">
           <div className="max-w-7xl mx-auto w-full">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
               {/* Left Side - Main Content */}
-              <div className="md:col-span-8">
-                <div className="flex items-start gap-6">
-                  {/* Number "23" */}
-                  <div className="flex items-baseline gap-1">
-                    <h1 className="text-[140px] md:text-[180px] font-black leading-none text-yellow-400" style={{ letterSpacing: '-0.05em' }}>
+              <div className="lg:col-span-7">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-8">
+                  {/* Number "2025" */}
+                  <div className="flex-shrink-0">
+                    <h1 className="text-[80px] sm:text-[100px] md:text-[140px] lg:text-[160px] font-black leading-none text-yellow-400 text-center md:text-left" style={{ letterSpacing: '-0.03em' }}>
                       {titleNumber}
                     </h1>
-                    <span className="text-3xl md:text-4xl font-bold text-white uppercase self-start mt-4">
-                      RD
-                    </span>
                   </div>
 
-                  {/* Title Lines + Badges */}
-                  <div className="flex flex-col gap-4 mt-8">
-                    {/* Title Text - 3 Lines */}
-                    <div>
-                      <div className="text-2xl md:text-3xl font-bold text-white uppercase leading-tight">
-                        TAHUNAN
-                      </div>
-                      <div className="text-2xl md:text-3xl font-bold text-white uppercase leading-tight">
-                        RAPAT
-                      </div>
-                      <div className="text-2xl md:text-3xl font-bold text-white uppercase leading-tight">
-                        UMUM
-                      </div>
-                    </div>
-
-                    {/* Logo Badges - 2 kotak */}
-                    <div className="flex gap-2">
-                      <div className="w-12 h-12 bg-yellow-400 rounded flex items-center justify-center border-2 border-red-600">
-                        <span className="text-xs font-bold text-red-600">DISDIKBUD</span>
-                      </div>
-                      <div className="w-12 h-12 bg-white rounded flex items-center justify-center">
-                        <div className="relative w-8 h-8">
-                          <svg className="w-full h-full text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                        </div>
-                      </div>
+                  {/* Title Lines - 1 baris */}
+                  <div className="flex items-center mt-0 md:mt-2">
+                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white uppercase leading-tight text-center md:text-left whitespace-nowrap">
+                      PILIH PEJABAT FAVORIT ANDA
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Right Side - Time Remaining */}
-              <div className="md:col-span-4">
-                <div className="bg-black/60 backdrop-blur-md rounded-2xl p-6 border border-gray-700">
-                  <h3 className="text-white text-sm font-medium mb-6 text-center">Waktu Tersisa</h3>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-6xl font-bold text-white mb-1">
+              <div className="lg:col-span-5 flex items-center justify-center mt-8 lg:mt-0">
+                <div className="text-white text-center w-full">
+                  <h3 className="text-xs sm:text-sm md:text-base font-medium mb-4 sm:mb-6 text-gray-300">Waktu Tersisa</h3>
+                  <div className="flex items-baseline gap-2 sm:gap-4 md:gap-6 justify-center flex-wrap">
+                    <div className="min-w-[60px] sm:min-w-[80px]">
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-none">
                         {String(timeRemaining.hours).padStart(2, '0')}
                       </div>
-                      <div className="text-gray-400 text-sm">Jam</div>
+                      <div className="text-xs sm:text-sm md:text-base text-white mt-1 sm:mt-2">Jam</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-6xl font-bold text-white mb-1">
+                    <div className="min-w-[60px] sm:min-w-[80px]">
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-none">
                         {String(timeRemaining.minutes).padStart(2, '0')}
                       </div>
-                      <div className="text-gray-400 text-sm">Menit</div>
+                      <div className="text-xs sm:text-sm md:text-base text-white mt-1 sm:mt-2">Menit</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-6xl font-bold text-white mb-1">
+                    <div className="min-w-[60px] sm:min-w-[80px]">
+                      <div className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-none">
                         {String(timeRemaining.seconds).padStart(2, '0')}
                       </div>
-                      <div className="text-gray-400 text-sm">Detik</div>
+                      <div className="text-xs sm:text-sm md:text-base text-white mt-1 sm:mt-2">Detik</div>
                     </div>
                   </div>
                 </div>
@@ -298,39 +387,35 @@ function VoterPageContent() {
         </div>
       </div>
 
-      {/* White Card Overlap - Sesuai Referensi */}
-      <div className="relative z-20 -mt-20">
+      {/* White Card Overlap */}
+      <div className="relative z-20 -mt-12 sm:-mt-16 md:-mt-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
               {/* Left - Greeting */}
-              <div className="flex-1">
-                <h2 className="text-4xl md:text-5xl font-bold text-black mb-3">
-                  Halo {voterName} 👋
+              <div className="flex-1 w-full md:w-auto">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-black mb-2 sm:mb-3">
+                  {greeting} 👋
                 </h2>
-                <p className="text-gray-600 text-lg">
-                  Saatnya untuk menyuarakan pendapat Anda.
+                <p className="text-base sm:text-lg text-gray-600">
+                  Saatnya untuk memilih pejabat favorit anda
                 </p>
               </div>
 
               {/* Right - Button */}
-              <div className="w-full md:w-auto">
+              <div className="w-full md:w-auto flex flex-col items-start md:items-end">
                 <Link
-                  href={`/voter/vote?qrcode=${qrCode}`}
-                  className="group relative inline-flex items-center justify-between gap-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 px-8 rounded-2xl transition-all shadow-lg w-full md:w-auto"
+                  href={`/voter/categories?qrcode=${qrCode}`}
+                  className="group relative inline-flex items-center justify-between gap-3 sm:gap-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl transition-all shadow-lg w-full md:w-auto text-center"
                 >
-                  <div className="flex flex-col items-start">
-                    <span className="text-xl md:text-2xl mb-2">Berikan Suara Anda Sekarang</span>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 bg-red-500 px-3 py-1 rounded-full text-xs font-bold">
-                        <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                        LIVE
-                      </span>
-                      <span className="text-sm font-normal text-blue-100">Voting sedang dibuka</span>
-                    </div>
-                  </div>
-                  <span className="text-4xl group-hover:translate-x-1 transition-transform">→</span>
+                  <span className="text-base sm:text-lg md:text-xl">Berikan Suara Anda Sekarang</span>
+                  <span className="text-lg sm:text-xl group-hover:translate-x-1 transition-transform">→</span>
                 </Link>
+                <div className="flex items-center gap-2 mt-2 sm:mt-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="text-xs font-bold text-red-500 uppercase">LIVE</span>
+                  <span className="text-xs sm:text-sm text-black">Voting sedang dibuka</span>
+                </div>
               </div>
             </div>
           </div>

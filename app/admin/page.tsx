@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase-mock'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 
