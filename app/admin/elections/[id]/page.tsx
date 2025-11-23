@@ -61,8 +61,12 @@ export default function ElectionDetailPage() {
     loadData()
   }, [electionId])
 
-  const loadData = async () => {
+  const loadData = async (skipLoading = false) => {
     try {
+      if (!skipLoading) {
+        setLoading(true)
+      }
+
       // Load election
       const { data: electionData, error: electionError } = await supabase
         .from('elections')
@@ -97,24 +101,33 @@ export default function ElectionDetailPage() {
       setCategories(categoriesData || [])
 
       // Load voting sessions (all active)
-      const { data: sessionsData } = await supabase
+      // Note: We only load active sessions, deleted sessions won't appear
+      const { data: sessionsData, error: sessionsError } = await supabase
         .from('voting_sessions')
         .select('*')
         .eq('election_id', electionId)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
-      if (sessionsData && sessionsData.length > 0) {
+      if (sessionsError) {
+        console.error('Error loading voting sessions:', sessionsError)
+        setVotingSessions([])
+        setVotingSession(null)
+      } else if (sessionsData && sessionsData.length > 0) {
+        console.log('Loaded voting sessions:', sessionsData.length)
         setVotingSessions(sessionsData)
         setVotingSession(sessionsData[0]) // Set first one as default for backward compatibility
       } else {
+        console.log('No voting sessions found')
         setVotingSessions([])
         setVotingSession(null)
       }
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
-      setLoading(false)
+      if (!skipLoading) {
+        setLoading(false)
+      }
     }
   }
 
@@ -126,39 +139,87 @@ export default function ElectionDetailPage() {
 
     setGenerating(true)
     try {
+      // Get existing QR codes to ensure we don't create duplicates
+      const { data: existingSessions } = await supabase
+        .from('voting_sessions')
+        .select('qr_code')
+        .eq('election_id', electionId)
+        .eq('is_active', true)
+
+      const existingQRCodes = new Set(existingSessions?.map(s => s.qr_code) || [])
+
       // Generate multiple QR codes
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const sessionsToInsert = []
+      let attempts = 0
+      const maxAttempts = qrCount * 10 // Limit attempts to prevent infinite loop
 
-      for (let i = 0; i < qrCount; i++) {
+      for (let i = 0; i < qrCount && attempts < maxAttempts; attempts++) {
         const timestamp = Date.now()
         const random = Math.random().toString(36).substring(7)
-        const qrCode = `voting-${electionId}-${timestamp}-${random}`
+        const qrCode = `voting-${electionId}-${timestamp}-${random}-${i}`
         
-        sessionsToInsert.push({
-          election_id: electionId,
-          qr_code: qrCode,
-          is_active: true,
-        })
+        // Ensure unique QR code (prevent duplicates)
+        if (!existingQRCodes.has(qrCode)) {
+          sessionsToInsert.push({
+            election_id: electionId,
+            qr_code: qrCode,
+            is_active: true,
+          })
+          existingQRCodes.add(qrCode) // Add to set to prevent duplicates in same batch
+          i++ // Only increment when QR code is successfully added
+        }
       }
 
-      // Insert all sessions at once
+      if (sessionsToInsert.length === 0) {
+        alert('Tidak dapat membuat QR code baru. Silakan coba lagi.')
+        setGenerating(false)
+        return
+      }
+
+      // Insert new sessions (only adds new QR codes, does NOT delete existing ones)
       const { data, error } = await supabase
         .from('voting_sessions')
         .insert(sessionsToInsert)
         .select()
 
       if (error) {
+        console.error('Error creating QR codes:', error)
         alert('Gagal membuat QR codes: ' + error.message)
         setGenerating(false)
         return
       }
 
-      // Reload data to show all QR codes
-      await loadData()
+      // Verify insert was successful
+      if (data && data.length > 0) {
+        console.log('QR codes created successfully:', data.length)
+      } else {
+        console.warn('No QR codes were created, but no error occurred')
+      }
+
+      const createdCount = data?.length || sessionsToInsert.length
+      const currentTotal = votingSessions.length
+      const newTotal = currentTotal + createdCount
+
+      // Immediately update state optimistically (add new QR codes to current list)
+      const updatedSessions = [...votingSessions, ...(data || [])]
+      setVotingSessions(updatedSessions)
+      if (votingSessions.length === 0 && updatedSessions.length > 0) {
+        setVotingSession(updatedSessions[0])
+      }
+
+      // Switch to QR tab immediately for better UX
       setActiveTab('qr')
-      alert(`Berhasil membuat ${qrCount} QR code!`)
+      
+      // Wait a bit to ensure database commit
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Reload data from database to ensure sync (but state already updated above)
+      await loadData(true) // Skip loading state since we already updated UI
+      
+      alert(`✅ Berhasil menambahkan ${createdCount} QR code baru!\n\nTotal QR code aktif: ${newTotal}\nQR code yang sudah ada tetap aman dan tidak terhapus.`)
     } catch (err: any) {
+      console.error('Error generating QR codes:', err)
       alert('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
     } finally {
       setGenerating(false)
@@ -188,6 +249,130 @@ export default function ElectionDetailPage() {
     }
   }
 
+  const deleteQRCode = async (sessionId: string, qrCodeNumber: number) => {
+    if (!confirm(`Yakin ingin menghapus QR Code #${qrCodeNumber}?\n\nTindakan ini akan:\n• Menghapus QR code ini secara permanen\n• QR code ini tidak bisa digunakan untuk voting\n• TIDAK DAPAT DIBATALKAN`)) {
+      return
+    }
+
+    try {
+      // Delete the voting session from database first
+      const { data, error } = await supabase
+        .from('voting_sessions')
+        .delete()
+        .eq('id', sessionId)
+        .select()
+
+      if (error) {
+        console.error('Error deleting QR code:', error)
+        alert('Gagal menghapus QR code: ' + (error.message || 'Unknown error'))
+        return
+      }
+
+      // Check if deletion was successful
+      console.log('QR code deletion result:', data)
+
+      // Immediately update state to remove from UI
+      const updatedSessions = votingSessions.filter(s => s.id !== sessionId)
+      setVotingSessions(updatedSessions)
+      
+      // Also update votingSession if it was the deleted one
+      if (votingSession?.id === sessionId) {
+        setVotingSession(updatedSessions.length > 0 ? updatedSessions[0] : null)
+      }
+
+      // Wait a bit to ensure database commit
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Force reload data from database to ensure sync
+      await loadData(true)
+      
+      alert(`✅ QR Code #${qrCodeNumber} berhasil dihapus!`)
+    } catch (err: any) {
+      console.error('Error deleting QR code:', err)
+      // Reload data to ensure UI is in sync
+      await loadData(true)
+      alert('Terjadi kesalahan saat menghapus QR code: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  const deleteAllQRCodes = async () => {
+    if (!votingSessions || votingSessions.length === 0) {
+      alert('Tidak ada QR code untuk dihapus')
+      return
+    }
+
+    const totalCount = votingSessions.length
+
+    // Double confirmation
+    const firstConfirm = confirm(
+      `⚠️ PERINGATAN: Apakah Anda yakin ingin menghapus SEMUA QR code?\n\n` +
+      `Total QR code yang akan dihapus: ${totalCount}\n\n` +
+      `Tindakan ini akan:\n` +
+      `• Menghapus SEMUA QR code untuk pemilihan ini\n` +
+      `• QR code yang dihapus tidak bisa digunakan untuk voting\n` +
+      `• TIDAK DAPAT DIBATALKAN\n\n` +
+      `Klik OK untuk melanjutkan atau Cancel untuk membatalkan.`
+    )
+
+    if (!firstConfirm) return
+
+    const secondConfirm = confirm(
+      `⚠️ KONFIRMASI TERAKHIR!\n\n` +
+      `Anda akan menghapus ${totalCount} QR code.\n` +
+      `Pastikan ini yang Anda inginkan.\n\n` +
+      `Klik OK untuk menghapus semua QR code atau Cancel untuk membatalkan.`
+    )
+
+    if (!secondConfirm) return
+
+    try {
+      // Optimistically update state (clear UI immediately)
+      const previousSessions = [...votingSessions]
+      setVotingSessions([])
+      setVotingSession(null)
+
+      // Delete all voting sessions for this election
+      const { data, error } = await supabase
+        .from('voting_sessions')
+        .delete()
+        .eq('election_id', electionId)
+        .select()
+
+      if (error) {
+        console.error('Error deleting all QR codes:', error)
+        // Revert state on error
+        setVotingSessions(previousSessions)
+        if (previousSessions.length > 0) {
+          setVotingSession(previousSessions[0])
+        }
+        alert('Gagal menghapus QR codes: ' + (error.message || 'Unknown error'))
+        return
+      }
+
+      // Verify deletion was successful
+      if (data && data.length > 0) {
+        console.log('QR codes deleted successfully:', data.length)
+      }
+
+      // Wait a bit to ensure database commit and cache invalidation
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Force reload data from database (skip loading state for better UX)
+      // This ensures we get the latest data from database
+      await loadData(true)
+      
+      // Small delay before showing alert to ensure UI is updated
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      alert(`✅ Semua QR code (${totalCount}) berhasil dihapus!`)
+    } catch (err: any) {
+      console.error('Error deleting all QR codes:', err)
+      // Reload data to ensure UI is in sync
+      await loadData()
+      alert('Terjadi kesalahan saat menghapus QR codes: ' + (err.message || 'Unknown error'))
+    }
+  }
+
   const deleteCandidate = async (candidateId: string) => {
     if (!confirm('Yakin ingin menghapus kandidat ini?')) return
 
@@ -205,6 +390,127 @@ export default function ElectionDetailPage() {
       loadData()
     } catch (err) {
       alert('Terjadi kesalahan')
+    }
+  }
+
+  const downloadQRCode = async (qrCodeUrl: string, qrCodeNumber: number, qrCode: string) => {
+    try {
+      // Find the QR code element by data attribute
+      const qrElement = document.querySelector(`[data-qr-id="${qrCode}"]`) as HTMLElement
+      if (!qrElement) {
+        alert('QR Code tidak ditemukan. Silakan refresh halaman dan coba lagi.')
+        return
+      }
+
+      // Wait a bit for SVG to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Get the SVG element inside QR code
+      const svgElement = qrElement.querySelector('svg') as SVGElement
+      if (!svgElement) {
+        alert('SVG QR Code tidak ditemukan. Silakan refresh halaman dan coba lagi.')
+        return
+      }
+
+      // Clone the SVG to avoid modifying the original
+      const clonedSvg = svgElement.cloneNode(true) as SVGElement
+
+      // Set size for print (high resolution)
+      const printSize = 600 // Higher resolution for print
+      clonedSvg.setAttribute('width', printSize.toString())
+      clonedSvg.setAttribute('height', printSize.toString())
+
+      // Convert SVG to canvas
+      const svgData = new XMLSerializer().serializeToString(clonedSvg)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        alert('Canvas tidak didukung di browser ini')
+        return
+      }
+
+      // Use HTMLImageElement explicitly to avoid conflict with Next.js Image
+      const img = document.createElement('img') as HTMLImageElement
+
+      canvas.width = printSize + 80 // Add padding for sides
+      canvas.height = printSize + 120 // Extra space for text below QR code
+
+      return new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          try {
+            // Fill white background
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            // Draw QR code centered with padding
+            const qrSize = printSize - 40 // Add padding
+            const x = (canvas.width - qrSize) / 2
+            const y = 20
+            ctx.drawImage(img, x, y, qrSize, qrSize)
+
+            // Add text below QR code
+            ctx.fillStyle = '#000000'
+            ctx.font = 'bold 24px Arial'
+            ctx.textAlign = 'center'
+            ctx.fillText(`QR Code #${qrCodeNumber}`, canvas.width / 2, printSize + 45)
+            
+            ctx.font = '18px Arial'
+            ctx.fillStyle = '#333333'
+            // Truncate long titles to fit
+            const title = election.title.length > 40 ? election.title.substring(0, 40) + '...' : election.title
+            ctx.fillText(title, canvas.width / 2, printSize + 75)
+            
+            ctx.font = '14px Arial'
+            ctx.fillStyle = '#666666'
+            ctx.fillText('Scan untuk Voting', canvas.width / 2, printSize + 100)
+
+            // Convert canvas to blob and download
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error('Gagal membuat blob'))
+                return
+              }
+
+              const url = URL.createObjectURL(blob)
+              const link = document.createElement('a')
+              link.href = url
+              const safeTitle = election.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
+              link.download = `QRCode-${qrCodeNumber}-${safeTitle}.png`
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
+              
+              // Clean up after a delay
+              setTimeout(() => {
+                URL.revokeObjectURL(url)
+              }, 100)
+
+              resolve()
+            }, 'image/png', 1.0) // Highest quality
+          } catch (drawError: any) {
+            console.error('Error drawing QR code:', drawError)
+            reject(new Error('Gagal menggambar QR code: ' + (drawError.message || 'Unknown error')))
+          }
+        }
+
+        img.onerror = (error) => {
+          console.error('Error loading SVG image:', error)
+          reject(new Error('Gagal memuat gambar QR code'))
+        }
+
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+        const url = URL.createObjectURL(svgBlob)
+        img.src = url
+        
+        // Clean up SVG blob URL after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(url)
+        }, 5000)
+      })
+    } catch (error: any) {
+      console.error('Error downloading QR code:', error)
+      alert('Gagal mengunduh QR code: ' + (error.message || 'Unknown error'))
     }
   }
 
@@ -540,25 +846,55 @@ export default function ElectionDetailPage() {
 
             {activeTab === 'qr' && (
               <div>
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
                   <h2 className="text-xl font-bold text-gray-900">QR Code untuk Voting</h2>
                   {votingSessions.length > 0 && (
-                    <button
-                      onClick={deactivateAllSessions}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm"
-                    >
-                      Nonaktifkan Semua QR Code
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={deactivateAllSessions}
+                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm transition-all shadow-sm hover:shadow-md"
+                        title="Nonaktifkan semua QR code (tidak dihapus, hanya dinonaktifkan)"
+                      >
+                        Nonaktifkan Semua
+                      </button>
+                      <button
+                        onClick={deleteAllQRCodes}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm transition-all shadow-sm hover:shadow-md"
+                        title="Hapus semua QR code secara permanen"
+                      >
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Hapus Semua
+                        </span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 {/* Generate QR Codes Form */}
                 <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate QR Code Baru</h3>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Tambah QR Code Baru</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Tambahkan QR code baru untuk peserta tambahan. QR code yang sudah ada <strong className="text-green-600">tidak akan terhapus</strong> dan voting yang sudah dilakukan tetap aman.
+                    </p>
+                    {votingSessions.length > 0 && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+                        <p className="text-sm text-green-800">
+                          <strong>Total QR Code Aktif:</strong> {votingSessions.length} QR code
+                        </p>
+                        <p className="text-xs text-green-700 mt-1">
+                          QR code yang sudah ada tetap aktif dan dapat digunakan untuk voting.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-4 items-end">
                     <div className="flex-1">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Jumlah QR Code (1 QR Code = 1 Peserta)
+                        Jumlah QR Code Baru (1 QR Code = 1 Peserta)
                       </label>
                       <input
                         type="number"
@@ -567,22 +903,32 @@ export default function ElectionDetailPage() {
                         value={qrCount}
                         onChange={(e) => setQrCount(parseInt(e.target.value) || 1)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-                        placeholder="Jumlah peserta"
+                        placeholder="Jumlah peserta baru"
                       />
                       <p className="mt-1 text-xs text-gray-500">
-                        Generate QR code sesuai jumlah peserta yang akan hadir di acara
+                        QR code baru akan ditambahkan tanpa menghapus QR code yang sudah ada
                       </p>
                     </div>
                     <button
                       onClick={generateQRCode}
                       disabled={generating || qrCount < 1 || qrCount > 1000}
-                      className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium ${
+                      className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-all ${
                         generating || qrCount < 1 || qrCount > 1000
                           ? 'opacity-50 cursor-not-allowed'
-                          : ''
+                          : 'shadow-md hover:shadow-lg'
                       }`}
                     >
-                      {generating ? 'Membuat...' : `Generate ${qrCount} QR Code`}
+                      {generating ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Membuat...
+                        </span>
+                      ) : (
+                        `+ Tambah ${qrCount} QR Code`
+                      )}
                     </button>
                   </div>
                 </div>
@@ -605,22 +951,48 @@ export default function ElectionDetailPage() {
                             className="bg-white rounded-lg shadow-md p-4 border border-gray-200"
                           >
                             <div className="flex flex-col items-center space-y-4">
-                              <div className="bg-white p-3 rounded-lg border-2 border-gray-200">
+                              <div 
+                                className="bg-white p-3 rounded-lg border-2 border-gray-200"
+                                data-qr-id={session.qr_code}
+                              >
                                 <QRCode value={sessionUrl} size={150} />
                               </div>
-                              <div className="w-full text-center">
-                                <p className="text-xs text-gray-500 mb-1">QR Code #{index + 1}</p>
+                              <div className="w-full text-center space-y-2">
+                                <p className="text-xs text-gray-500 mb-1 font-semibold">QR Code #{index + 1}</p>
                                 <p className="text-xs text-gray-400 break-all bg-gray-50 p-2 rounded">
                                   {session.qr_code.substring(0, 30)}...
                                 </p>
-                                <a
-                                  href={sessionUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-blue-600 hover:underline mt-1 inline-block"
-                                >
-                                  Buka Link
-                                </a>
+                                <div className="flex flex-col gap-2 mt-3">
+                                  <button
+                                    onClick={() => downloadQRCode(sessionUrl, index + 1, session.qr_code)}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Download untuk Print
+                                  </button>
+                                  <div className="flex gap-2">
+                                    <a
+                                      href={sessionUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex-1 text-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium transition-colors"
+                                    >
+                                      Buka Link
+                                    </a>
+                                    <button
+                                      onClick={() => deleteQRCode(session.id, index + 1)}
+                                      className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium transition-colors flex items-center justify-center gap-1"
+                                      title="Hapus QR code ini secara permanen"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                      Hapus
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>

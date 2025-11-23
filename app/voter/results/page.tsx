@@ -558,20 +558,51 @@ function ResultsPageContent() {
                     return (
                       <div key={categoryResult.category.id} className="space-y-4 animate-fadeIn">
                         {/* Category Stats */}
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                          <div className="bg-white rounded-xl p-4 shadow-md">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-2xl">👤</span>
-                              <p className="text-sm text-gray-600">Total Suara</p>
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+                          {/* Total Suara Card */}
+                          <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 border border-slate-200/50">
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100/30 to-transparent opacity-50"></div>
+                            <div className="relative p-3 sm:p-4 md:p-5">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-1 sm:mb-2">Total Suara</p>
+                                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.totalVotes}</p>
+                                </div>
+                                <div className="flex-shrink-0 ml-2 sm:ml-3">
+                                  <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-purple-100 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                    <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">{categoryResult.totalVotes}</p>
                           </div>
-                          <div className="bg-white rounded-xl p-4 shadow-md">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-2xl">✓</span>
-                              <p className="text-sm text-gray-600">Kemajuan Voting</p>
+
+                          {/* Kemajuan Voting Card */}
+                          <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 border border-blue-200/50">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-transparent opacity-50"></div>
+                            <div className="relative p-3 sm:p-4 md:p-5">
+                              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-1 sm:mb-2">Kemajuan Voting</p>
+                                  <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 leading-none mb-1 sm:mb-2">{categoryResult.votingProgress}%</p>
+                                  <div className="w-full bg-blue-100 rounded-full h-1.5 sm:h-2">
+                                    <div 
+                                      className="bg-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out"
+                                      style={{ width: `${categoryResult.votingProgress}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div className="flex-shrink-0 ml-2 sm:ml-3">
+                                  <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center">
+                                    <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-2xl font-bold text-green-600">{categoryResult.votingProgress}%</p>
                           </div>
                         </div>
 
