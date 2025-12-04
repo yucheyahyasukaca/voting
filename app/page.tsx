@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { extractQRCode } from '@/lib/qrcode-utils'
 
 declare global {
   interface Window {
@@ -64,21 +65,7 @@ export default function HomePage() {
       
       if (result) {
         const decodedText = result.getText()
-        let qrCode = decodedText
-        
-        // Extract qrcode dari URL jika ada
-        if (decodedText.includes('qrcode=')) {
-          try {
-            const url = new URL(decodedText)
-            qrCode = url.searchParams.get('qrcode') || decodedText.split('qrcode=')[1]?.split('&')[0] || decodedText
-          } catch {
-            const match = decodedText.match(/qrcode=([^&]+)/)
-            qrCode = match ? match[1] : decodedText
-          }
-        } else if (decodedText.includes('/voter')) {
-          const match = decodedText.match(/qrcode=([^&]+)/)
-          qrCode = match ? match[1] : decodedText
-        }
+        const qrCode = extractQRCode(decodedText)
         
         router.push(`/voter?qrcode=${encodeURIComponent(qrCode)}`)
       }
@@ -156,20 +143,7 @@ export default function HomePage() {
                 
                 if (result) {
                   const decodedText = result.getText()
-                  let qrCode = decodedText
-                  
-                  if (decodedText.includes('qrcode=')) {
-                    try {
-                      const url = new URL(decodedText)
-                      qrCode = url.searchParams.get('qrcode') || decodedText.split('qrcode=')[1]?.split('&')[0] || decodedText
-                    } catch {
-                      const match = decodedText.match(/qrcode=([^&]+)/)
-                      qrCode = match ? match[1] : decodedText
-                    }
-                  } else if (decodedText.includes('/voter')) {
-                    const match = decodedText.match(/qrcode=([^&]+)/)
-                    qrCode = match ? match[1] : decodedText
-                  }
+                  const qrCode = extractQRCode(decodedText)
                   
                   if (scanIntervalRef.current) {
                     clearInterval(scanIntervalRef.current)
@@ -213,7 +187,7 @@ export default function HomePage() {
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">Selamat Datang!</h1>
             <p className="text-gray-400 text-lg">
-              Siap untuk melihat voting live dalam aksi?
+              Siap untuk memberikan suara anda?
             </p>
           </div>
           

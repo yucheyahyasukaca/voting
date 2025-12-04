@@ -468,7 +468,14 @@ function VoterPageContent() {
       {/* Footer */}
       <div className="bg-white border-t border-gray-200 px-4 py-4">
         <div className="text-center">
-          <p className="text-gray-500 text-sm">disdikbud.org</p>
+          <a 
+            href="https://garuda-21.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-500 hover:text-gray-700 text-sm transition-colors"
+          >
+            GARUDA-21.com Sekolah Digital
+          </a>
         </div>
       </div>
     </div>

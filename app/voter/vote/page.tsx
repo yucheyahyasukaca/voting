@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { normalizeQRCode } from '@/lib/qrcode-utils'
 
 interface Candidate {
   id: string
@@ -26,7 +27,8 @@ interface Category {
 function VotePageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const qrCode = searchParams.get('qrcode')
+  const qrCodeRaw = searchParams.get('qrcode')
+  const qrCode = qrCodeRaw ? normalizeQRCode(qrCodeRaw) : null
   const categoryId = searchParams.get('category')
   
   const [candidates, setCandidates] = useState<Candidate[]>([])
@@ -110,7 +112,7 @@ function VotePageContent() {
       setCandidates(candidatesData || [])
 
       // Check if voter has already voted in this category
-      const voterToken = qrCode!
+      const voterToken = normalizeQRCode(qrCode!)
       const { data: existingVotesData } = await supabase
         .from('votes')
         .select('id, candidate_id')
@@ -165,7 +167,7 @@ function VotePageContent() {
         return
       }
 
-      const voterToken = qrCode
+      const voterToken = normalizeQRCode(qrCode)
 
       // ALWAYS delete existing votes for this voter in this category first (allow re-voting)
       // Wait for delete to complete before inserting
