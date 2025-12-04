@@ -54,9 +54,10 @@ function VotePageContent() {
 
   const loadElectionData = async () => {
     try {
+      // Get session with qr_code to ensure we use the exact value from database
       const { data: session, error: sessionError } = await supabase
         .from('voting_sessions')
-        .select('election_id')
+        .select('election_id, qr_code')
         .eq('qr_code', qrCode!)
         .single()
 
@@ -112,7 +113,9 @@ function VotePageContent() {
       setCandidates(candidatesData || [])
 
       // Check if voter has already voted in this category
-      const voterToken = normalizeQRCode(qrCode!)
+      // Use qr_code from database session (exact match) as voter_token
+      // This ensures consistency - QR code baru tidak akan match dengan votes lama
+      const voterToken = session.qr_code // Use exact qr_code from database, not from URL
       const { data: existingVotesData } = await supabase
         .from('votes')
         .select('id, candidate_id')
@@ -155,9 +158,10 @@ function VotePageContent() {
     setError(null)
 
     try {
+      // Get session with qr_code to use exact value from database
       const { data: session, error: sessionError } = await supabase
         .from('voting_sessions')
-        .select('election_id')
+        .select('election_id, qr_code')
         .eq('qr_code', qrCode)
         .single()
 
@@ -167,7 +171,9 @@ function VotePageContent() {
         return
       }
 
-      const voterToken = normalizeQRCode(qrCode)
+      // Use exact qr_code from database as voter_token
+      // This ensures consistency with the check in loadElectionData
+      const voterToken = session.qr_code
 
       // ALWAYS delete existing votes for this voter in this category first (allow re-voting)
       // Wait for delete to complete before inserting
