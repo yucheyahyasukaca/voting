@@ -166,3 +166,142 @@ body {
   background: #94a3b8;
 }
 
+/* Laser Scan Effect */
+@keyframes laserScan {
+  0% {
+    top: 0;
+    opacity: 0;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  }
+  10% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.6);
+  }
+  90% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.6);
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.animate-laser-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3b82f6;
+  z-index: 50;
+  animation: laserScan 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.6);
+}
+
+/* Dramatic Reveal */
+@keyframes dramaticReveal {
+  0% {
+    filter: brightness(0.2) blur(4px);
+    transform: scale(0.98);
+  }
+  40% {
+    filter: brightness(0.5) blur(2px);
+  }
+  100% {
+    filter: brightness(1) blur(0);
+    transform: scale(1);
+  }
+}
+
+.animate-dramatic-reveal {
+  animation: dramaticReveal 2s ease-out forwards;
+}
+
+/* Scanline Effect */
+.scanlines {
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0,0,0,0.1) 50%,
+    rgba(0,0,0,0.1)
+  );
+  background-size: 100% 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Progress Bar Fill Animation */
+@keyframes progressFill {
+  from {
+    width: 0%;
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-progress-fill {
+  animation: progressFill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Progress Bar Pulse */
+@keyframes progressPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0);
+  }
+}
+
+.animate-progress-pulse {
+  animation: progressPulse 1.5s ease-out;
+}
+
+/* Winner Progress Pulse (Yellow) */
+@keyframes winnerPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 20px 8px rgba(250, 204, 21, 0);
+  }
+}
+
+.animate-winner-pulse {
+  animation: winnerPulse 1.5s ease-out;
+}
+
+/* Shimmer Effect on Progress Bar */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: shimmer 1.5s ease-out;
+}

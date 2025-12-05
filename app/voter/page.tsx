@@ -203,18 +203,20 @@ function VoterPageContent() {
                 <Link href={`/voter?qrcode=${qrCode}`} className="text-white text-sm font-medium pb-1 border-b-2 border-white">
                   Beranda
                 </Link>
-                <Link href={`/voter?qrcode=${qrCode}&view=nominees`} className="text-gray-400 hover:text-white text-sm font-medium">
-                  Kandidat
-                </Link>
                 <Link href={`/voter/results?election=${election.id}`} className="text-gray-400 hover:text-white text-sm font-medium">
                   Hasil Live
                 </Link>
               </div>
               
               {/* Desktop Help Button */}
-              <button className="hidden md:block px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100">
+              <a 
+                href="https://wa.me/62811354321?text=Mas%20Yuche%20saya%20ada%20kendala" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hidden md:block px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors"
+              >
                 Butuh bantuan?
-              </button>
+              </a>
 
               {/* Mobile Menu Button */}
               <button
@@ -248,22 +250,21 @@ function VoterPageContent() {
                   Beranda
                 </Link>
                 <Link
-                  href={`/voter?qrcode=${qrCode}&view=nominees`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white text-base font-medium py-3 px-4 hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  Kandidat
-                </Link>
-                <Link
                   href={`/voter/results?election=${election.id}`}
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-gray-300 hover:text-white text-base font-medium py-3 px-4 hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   Hasil Live
                 </Link>
-                <button className="w-full mt-2 px-4 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors">
+                <a
+                  href="https://wa.me/62811354321?text=Mas%20Yuche%20saya%20ada%20kendala"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full mt-2 px-4 py-3 bg-white text-black rounded-full text-sm font-medium hover:bg-gray-100 transition-colors text-center"
+                >
                   Butuh bantuan?
-                </button>
+                </a>
               </div>
             </div>
           )}

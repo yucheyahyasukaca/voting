@@ -26,6 +26,15 @@ export default function AdminPage() {
     election: null,
   })
   const [deleting, setDeleting] = useState(false)
+  const [editTimeModal, setEditTimeModal] = useState<{ show: boolean; election: Election | null }>({
+    show: false,
+    election: null,
+  })
+  const [editTimeData, setEditTimeData] = useState({
+    start_date: '',
+    end_date: '',
+  })
+  const [updating, setUpdating] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -104,6 +113,71 @@ export default function AdminPage() {
       alert('Terjadi kesalahan: ' + err.message)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const openEditTimeModal = (election: Election) => {
+    setEditTimeModal({ show: true, election })
+    // Format dates for datetime-local input
+    const startDate = new Date(election.start_date)
+    const endDate = new Date(election.end_date)
+    
+    setEditTimeData({
+      start_date: formatDateTimeLocal(startDate),
+      end_date: formatDateTimeLocal(endDate),
+    })
+  }
+
+  const formatDateTimeLocal = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  const handleUpdateTime = async () => {
+    if (!editTimeModal.election) return
+
+    // Validation
+    if (!editTimeData.start_date || !editTimeData.end_date) {
+      alert('Mohon isi semua waktu')
+      return
+    }
+
+    const startDate = new Date(editTimeData.start_date)
+    const endDate = new Date(editTimeData.end_date)
+
+    if (endDate <= startDate) {
+      alert('Waktu berakhir harus setelah waktu mulai')
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const { error } = await supabase
+        .from('elections')
+        .update({
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+        })
+        .eq('id', editTimeModal.election.id)
+
+      if (error) {
+        console.error('Error updating election time:', error)
+        alert('Gagal mengubah waktu pemilihan: ' + error.message)
+        return
+      }
+
+      // Close modal and reload
+      setEditTimeModal({ show: false, election: null })
+      loadElections()
+    } catch (err: any) {
+      console.error('Error:', err)
+      alert('Terjadi kesalahan: ' + err.message)
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -248,11 +322,22 @@ export default function AdminPage() {
                     )}
 
                     <div className="space-y-2 mb-5">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>{formatDate(election.start_date)}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span>{formatDate(election.start_date)}</span>
+                        </div>
+                        <button
+                          onClick={() => openEditTimeModal(election)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit waktu"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,6 +383,95 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Time Modal */}
+      {editTimeModal.show && editTimeModal.election && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform animate-scaleIn">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">
+                  Edit Waktu Pemilihan
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  {editTimeModal.election.title}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Waktu Mulai
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={editTimeData.start_date}
+                    onChange={(e) => setEditTimeData({ ...editTimeData, start_date: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Waktu Berakhir
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={editTimeData.end_date}
+                    onChange={(e) => setEditTimeData({ ...editTimeData, end_date: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+              <p className="text-sm text-blue-800 flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Pastikan waktu yang dimasukkan sudah benar. Waktu berakhir harus setelah waktu mulai.</span>
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEditTimeModal({ show: false, election: null })}
+                disabled={updating}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleUpdateTime}
+                disabled={updating}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all"
+              >
+                {updating ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && deleteModal.election && (

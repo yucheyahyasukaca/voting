@@ -5,8 +5,41 @@ import { supabase } from '@/lib/supabase'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import QRCode from '@/components/QRCode'
-import { getVotingUrl } from '@/lib/app-url'
+
+// Custom hook for counter animation
+function useCountUp(end: number, duration: number = 1500, delay: number = 0, shouldStart: boolean = false) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!shouldStart) {
+      setCount(0)
+      return
+    }
+
+    const timer = setTimeout(() => {
+      let startTime: number | null = null
+      const animate = (currentTime: number) => {
+        if (startTime === null) startTime = currentTime
+        const progress = Math.min((currentTime - startTime) / duration, 1)
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+        setCount(Math.floor(easeOutQuart * end))
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          setCount(end)
+        }
+      }
+      requestAnimationFrame(animate)
+    }, delay)
+
+    return () => clearTimeout(timer)
+  }, [end, duration, delay, shouldStart])
+
+  return count
+}
 
 interface Election {
   id: string
@@ -45,6 +78,157 @@ interface VotingSession {
   qr_code: string
 }
 
+// Component for animated candidate card
+function CandidateCard({ 
+  candidate, 
+  index, 
+  animateProgress 
+}: { 
+  candidate: CandidateResult
+  index: number
+  animateProgress: boolean
+}) {
+  const animatedPercentage = useCountUp(
+    Math.round(candidate.percentage), 
+    1500, 
+    index * 150, 
+    animateProgress
+  )
+
+  return (
+    <div
+      className={`bg-white rounded-lg p-2.5 shadow-sm transition-all hover:shadow-md ${
+        index === 0 && candidate.vote_count > 0
+          ? 'border-2 border-yellow-400'
+          : 'border border-gray-200'
+      }`}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex-shrink-0">
+          {candidate.photo_url ? (
+            <Image
+              src={candidate.photo_url}
+              alt={candidate.name}
+              width={48}
+              height={48}
+              className="rounded-full object-cover w-12 h-12"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
+              👤
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold text-gray-900 truncate">
+            {candidate.name}
+          </h3>
+          {candidate.description && (
+            <p className="text-xs text-gray-600 truncate">{candidate.description}</p>
+          )}
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-lg font-bold text-gray-900">
+            {animatedPercentage}%
+          </p>
+          <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
+        </div>
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div
+          className={`h-2 rounded-full relative progress-shimmer ${
+            animateProgress ? 'animate-progress-fill' : ''
+          } ${
+            index === 0 && candidate.vote_count > 0
+              ? 'bg-yellow-400 animate-winner-pulse'
+              : 'bg-blue-500 animate-progress-pulse'
+          }`}
+          style={{ 
+            width: animateProgress ? `${candidate.percentage}%` : '0%',
+            animationDelay: `${index * 0.15}s`
+          }}
+        ></div>
+      </div>
+    </div>
+  )
+}
+
+// Component for large candidate card (fallback without categories)
+function LargeCandidateCard({ 
+  candidate, 
+  index, 
+  animateProgress 
+}: { 
+  candidate: CandidateResult
+  index: number
+  animateProgress: boolean
+}) {
+  const animatedPercentage = useCountUp(
+    Math.round(candidate.percentage), 
+    1500, 
+    index * 150, 
+    animateProgress
+  )
+
+  return (
+    <div
+      className={`bg-white rounded-xl p-4 shadow-md ${
+        index === 0 ? 'border-2 border-yellow-400' : 'border border-gray-200'
+      }`}
+    >
+      <div className="flex items-center gap-4 mb-3">
+        <div className="flex-shrink-0">
+          {candidate.photo_url ? (
+            <Image
+              src={candidate.photo_url}
+              alt={candidate.name}
+              width={60}
+              height={60}
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-15 h-15 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xl">
+              👤
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold text-gray-900 truncate">
+            {candidate.name}
+          </h3>
+          {candidate.description && (
+            <p className="text-sm text-gray-600 truncate">{candidate.description}</p>
+          )}
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-2xl font-bold text-gray-900">
+            {animatedPercentage}%
+          </p>
+          <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
+        </div>
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div
+          className={`h-3 rounded-full relative progress-shimmer ${
+            animateProgress ? 'animate-progress-fill' : ''
+          } ${
+            index === 0 ? 'bg-yellow-400 animate-winner-pulse' : 'bg-blue-500 animate-progress-pulse'
+          }`}
+          style={{ 
+            width: animateProgress ? `${candidate.percentage}%` : '0%',
+            animationDelay: `${index * 0.15}s`
+          }}
+        ></div>
+      </div>
+    </div>
+  )
+}
+
 function ResultsPageContent() {
   const searchParams = useSearchParams()
   const electionId = searchParams.get('election')
@@ -61,6 +245,20 @@ function ResultsPageContent() {
   const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 })
   const [votingSession, setVotingSession] = useState<VotingSession | null>(null)
   const [greeting, setGreeting] = useState('')
+  const [showIntro, setShowIntro] = useState(true)
+  const [animateProgress, setAnimateProgress] = useState(false)
+
+  // Intro timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowIntro(false)
+      // Start progress animation after intro
+      setTimeout(() => {
+        setAnimateProgress(true)
+      }, 100)
+    }, 2500)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Get greeting based on local time
   useEffect(() => {
@@ -102,7 +300,7 @@ function ResultsPageContent() {
       const endDate = new Date(election.end_date)
       const now = new Date()
       const diff = endDate.getTime() - now.getTime()
-
+      
       if (diff > 0) {
         const hours = Math.floor(diff / (1000 * 60 * 60))
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
@@ -171,33 +369,24 @@ function ResultsPageContent() {
         .order('order_index', { ascending: true })
 
       if (categoriesData && categoriesData.length > 0) {
-        // Hanya update categories, tidak mengubah activeCategoryTab
         setCategories(categoriesData)
         
-        // HANYA set/ubah activeCategoryTab saat first load (shouldSetDefaultTab = true)
-        // Saat auto-refresh (shouldSetDefaultTab = false), SKIP seluruh logic ini
         if (shouldSetDefaultTab) {
-          // Cek apakah sudah ada tab aktif (dari ref atau state)
           const currentActiveTab = activeCategoryTabRef.current || activeCategoryTab
           
           if (!currentActiveTab) {
-            // First load: set tab pertama sebagai default
             const firstCategoryId = categoriesData[0].id
             setActiveCategoryTab(firstCategoryId)
             activeCategoryTabRef.current = firstCategoryId
           } else {
-            // Cek apakah tab yang dipilih masih valid
             const selectedTabExists = categoriesData.some(cat => cat.id === currentActiveTab)
             if (!selectedTabExists) {
-              // Tab tidak ada lagi - pindah ke tab pertama
               const firstCategoryId = categoriesData[0].id
               setActiveCategoryTab(firstCategoryId)
               activeCategoryTabRef.current = firstCategoryId
             }
-            // Jika tab masih ada, tidak perlu mengubah apapun
           }
         }
-        // else: auto-refresh - SKIP semua logic, biarkan activeCategoryTab tetap seperti sekarang
       }
 
       const { data: votes } = await supabase
@@ -205,14 +394,10 @@ function ResultsPageContent() {
         .select('candidate_id, voter_token, category_id')
         .eq('election_id', electionId)
 
-      // Calculate total unique QR codes used for voting
-      // "Total Suara" = jumlah QR code unik yang sudah digunakan untuk vote
       const uniqueVoters = new Set(votes?.map(vote => vote.voter_token).filter(Boolean) || [])
       const totalUniqueVoters = uniqueVoters.size
       setTotalVotes(totalUniqueVoters)
 
-      // Calculate voting progress: % of voters who have voted
-      // Get total active voting sessions (unique QR codes)
       const { data: votingSessions } = await supabase
         .from('voting_sessions')
         .select('qr_code')
@@ -220,27 +405,18 @@ function ResultsPageContent() {
         .eq('is_active', true)
 
       const totalSessions = votingSessions?.length || 0
-
-      // Get unique voters who have voted (count distinct voter_token)
       const votersWhoVoted = uniqueVoters.size
-
-      // Calculate percentage
       const progress = totalSessions > 0 ? (votersWhoVoted / totalSessions) * 100 : 0
       setVotingProgress(Math.round(progress))
 
-      // Calculate results per category
       if (categoriesData && categoriesData.length > 0) {
         const categoryResultsData: CategoryResults[] = []
 
         categoriesData.forEach((category) => {
-          // Filter votes for this category
           const categoryVotes = votes?.filter(vote => vote.category_id === category.id) || []
-          
-          // Calculate unique QR codes for this category
           const uniqueVotersInCategory = new Set(categoryVotes.map(vote => vote.voter_token).filter(Boolean))
           const totalVotesInCategory = uniqueVotersInCategory.size
 
-          // Calculate unique QR codes per candidate in this category
           const voteCountsByCandidate: Record<string, Set<string>> = {}
           categoryVotes.forEach((vote) => {
             if (!voteCountsByCandidate[vote.candidate_id]) {
@@ -249,7 +425,6 @@ function ResultsPageContent() {
             voteCountsByCandidate[vote.candidate_id].add(vote.voter_token)
           })
 
-          // Get candidates for this category (all candidates are shown per category for now)
           const candidateResultsForCategory: CandidateResult[] = candidates.map((candidate) => {
             const uniqueQRCodesForCandidate = voteCountsByCandidate[candidate.id]?.size || 0
             return {
@@ -262,7 +437,6 @@ function ResultsPageContent() {
 
           candidateResultsForCategory.sort((a, b) => b.vote_count - a.vote_count)
 
-          // Calculate voting progress for this category
           const categoryProgress = totalSessions > 0 ? (totalVotesInCategory / totalSessions) * 100 : 0
 
           categoryResultsData.push({
@@ -275,7 +449,6 @@ function ResultsPageContent() {
 
         setCategoryResults(categoryResultsData)
       } else {
-        // Fallback: if no categories, show all candidates together (backward compatibility)
         const voteCountsByCandidate: Record<string, Set<string>> = {}
         votes?.forEach((vote) => {
           if (!voteCountsByCandidate[vote.candidate_id]) {
@@ -303,9 +476,34 @@ function ResultsPageContent() {
     }
   }
 
-  // Extract number from title
   const titleMatch = election?.title.match(/(\d+)/)
   const titleNumber = titleMatch ? titleMatch[1] : '2025'
+
+  if (showIntro) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center overflow-hidden">
+        <div className="scanlines"></div>
+        <div className="animate-laser-scan"></div>
+        
+        <div className="relative z-10 text-center px-4">
+          <div className="text-blue-500 font-mono text-xs md:text-sm mb-2 animate-pulse tracking-widest">SYSTEM INITIALIZING...</div>
+          <div className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-white to-blue-600 animate-gradient tracking-tighter uppercase">
+            HASIL LIVE
+          </div>
+          <div className="mt-6 flex justify-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+        </div>
+        
+        {/* Decorative Grid */}
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] animate-grid"></div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -329,7 +527,6 @@ function ResultsPageContent() {
     )
   }
 
-  // Check if admin allows viewing results
   if (!election.allow_view_results) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -408,10 +605,8 @@ function ResultsPageContent() {
     )
   }
 
-  const qrCodeValue = votingSession ? getVotingUrl(votingSession.qr_code) : ''
-
   return (
-    <div className="min-h-screen lg:h-screen bg-black lg:overflow-hidden flex flex-col">
+    <div className="min-h-screen lg:h-screen bg-black lg:overflow-hidden flex flex-col animate-dramatic-reveal">
       {/* Header */}
       <div className="bg-black border-b border-gray-800 px-4 py-2 lg:py-3">
         <div className="max-w-7xl mx-auto">
@@ -495,293 +690,204 @@ function ResultsPageContent() {
       {/* Main Content Card */}
       <div className="flex-1 max-w-7xl mx-auto px-4 py-3 lg:py-4 w-full lg:overflow-hidden">
         <div className="bg-gray-100 rounded-2xl shadow-2xl p-4 lg:p-6 lg:h-full lg:overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 lg:gap-6 lg:h-full">
-            {/* Left Panel - QR Code */}
-            <div className="flex flex-col items-center justify-start">
-              <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 text-center">
-                Scan QR Code untuk Vote
-              </h2>
-              <p className="text-gray-600 text-sm mb-3 text-center">
-                Arahkan kamera perangkat Anda ke kode & mulai!
-              </p>
-              {qrCodeValue ? (
-                <div className="bg-white p-3 rounded-2xl shadow-lg">
-                  <QRCode value={qrCodeValue} size={200} />
-                </div>
-              ) : (
-                <div className="w-[200px] h-[200px] bg-gray-200 rounded-2xl flex items-center justify-center">
-                  <p className="text-gray-500 text-sm">QR Code tidak tersedia</p>
-                </div>
-              )}
-            </div>
+          <div className="flex flex-col min-h-0 w-full">
+            <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-1">
+              Hasil Vote Saat Ini
+            </h2>
+            <p className="text-gray-600 text-sm mb-3">
+              Pantau perkembangan pemilihan yang sedang berlangsung.
+            </p>
 
-            {/* Right Panel - Results */}
-            <div className="flex flex-col min-h-0">
-              <h2 className="text-lg lg:text-xl font-bold text-gray-900 mb-1">
-                Hasil Vote Saat Ini
-              </h2>
-              <p className="text-gray-600 text-sm mb-3">
-                Pantau perkembangan pemilihan yang sedang berlangsung.
-              </p>
-
-              {/* Category Tabs */}
-              {categoryResults.length > 0 ? (
-                <div>
-                  {/* Mobile Dropdown */}
-                  <div className="md:hidden mb-6">
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      Pilih Kategori:
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={activeCategoryTab || ''}
-                        onChange={(e) => {
-                          setActiveCategoryTab(e.target.value)
-                          activeCategoryTabRef.current = e.target.value
-                        }}
-                        className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-200 rounded-xl text-gray-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer shadow-sm hover:border-gray-300 transition-all"
-                      >
-                        {categoryResults.map((categoryResult) => (
-                          <option key={categoryResult.category.id} value={categoryResult.category.id}>
-                            {categoryResult.category.name} ({categoryResult.totalVotes} suara)
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Desktop Tabs */}
-                  <div className="hidden md:block mb-3">
-                    <div className="flex gap-2 flex-wrap">
+            {/* Category Tabs */}
+            {categoryResults.length > 0 ? (
+              <div>
+                {/* Mobile Dropdown */}
+                <div className="md:hidden mb-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Pilih Kategori:
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={activeCategoryTab || ''}
+                      onChange={(e) => {
+                        setActiveCategoryTab(e.target.value)
+                        activeCategoryTabRef.current = e.target.value
+                      }}
+                      className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-200 rounded-xl text-gray-900 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer shadow-sm hover:border-gray-300 transition-all"
+                    >
                       {categoryResults.map((categoryResult) => (
-                        <button
-                          key={categoryResult.category.id}
-                          onClick={() => {
-                            setActiveCategoryTab(categoryResult.category.id)
-                            activeCategoryTabRef.current = categoryResult.category.id
-                          }}
-                          className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
-                            activeCategoryTab === categoryResult.category.id
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span>{categoryResult.category.name}</span>
-                            <span className="text-xs opacity-80">({categoryResult.totalVotes})</span>
-                          </div>
-                        </button>
+                        <option key={categoryResult.category.id} value={categoryResult.category.id}>
+                          {categoryResult.category.name} ({categoryResult.totalVotes} suara)
+                        </option>
                       ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
                   </div>
+                </div>
 
-                  {/* Tab Content */}
-                  {categoryResults.map((categoryResult) => {
-                    if (activeCategoryTab !== categoryResult.category.id) return null
+                {/* Desktop Tabs */}
+                <div className="hidden md:block mb-3">
+                  <div className="flex gap-2 flex-wrap">
+                    {categoryResults.map((categoryResult) => (
+                      <button
+                        key={categoryResult.category.id}
+                        onClick={() => {
+                          setActiveCategoryTab(categoryResult.category.id)
+                          activeCategoryTabRef.current = categoryResult.category.id
+                        }}
+                        className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
+                          activeCategoryTab === categoryResult.category.id
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{categoryResult.category.name}</span>
+                          <span className="text-xs opacity-80">({categoryResult.totalVotes})</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                    const candidates = categoryResult.candidates
+                {/* Tab Content */}
+                {categoryResults.map((categoryResult) => {
+                  if (activeCategoryTab !== categoryResult.category.id) return null
 
-                    return (
-                      <div key={categoryResult.category.id} className="space-y-2 animate-fadeIn">
-                        {/* Category Stats */}
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          {/* Total Suara Card */}
-                          <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-xl shadow-sm border border-slate-200/50">
-                            <div className="relative p-2.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Total Suara</p>
-                                  <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none">{categoryResult.totalVotes}</p>
-                                </div>
-                                <div className="flex-shrink-0 ml-2">
-                                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                    </svg>
-                                  </div>
-                                </div>
+                  const candidates = categoryResult.candidates
+
+                  return (
+                    <div key={categoryResult.category.id} className="space-y-2 animate-fadeIn">
+                      {/* Category Stats */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        {/* Total Suara Card */}
+                        <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-xl shadow-sm border border-slate-200/50">
+                          <div className="relative p-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Total Suara</p>
+                                <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none">{categoryResult.totalVotes}</p>
                               </div>
-                            </div>
-                          </div>
-
-                          {/* Kemajuan Voting Card */}
-                          <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200/50">
-                            <div className="relative p-2.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Kemajuan</p>
-                                  <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.votingProgress}%</p>
-                                  <div className="w-full bg-blue-100 rounded-full h-1.5">
-                                    <div 
-                                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-500 ease-out"
-                                      style={{ width: `${categoryResult.votingProgress}%` }}
-                                    ></div>
-                                  </div>
-                                </div>
-                                <div className="flex-shrink-0 ml-2">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                  </div>
+                              <div className="flex-shrink-0 ml-2">
+                                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                  </svg>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Candidate Results - Scrollable Container */}
-                        {candidates.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500 bg-white rounded-xl text-sm">
-                            Belum ada hasil voting untuk kategori ini
-                          </div>
-                        ) : (
-                          <div className="space-y-2 lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
-                            {candidates.map((candidate, index) => (
-                              <div
-                                key={candidate.id}
-                                className={`bg-white rounded-lg p-2.5 shadow-sm transition-all hover:shadow-md ${
-                                  index === 0 && candidate.vote_count > 0
-                                    ? 'border-2 border-yellow-400'
-                                    : 'border border-gray-200'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="flex-shrink-0">
-                                    {candidate.photo_url ? (
-                                      <Image
-                                        src={candidate.photo_url}
-                                        alt={candidate.name}
-                                        width={48}
-                                        height={48}
-                                        className="rounded-full object-cover w-12 h-12"
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg">
-                                        👤
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-bold text-gray-900 truncate">
-                                      {candidate.name}
-                                    </h3>
-                                    {candidate.description && (
-                                      <p className="text-xs text-gray-600 truncate">{candidate.description}</p>
-                                    )}
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <p className="text-lg font-bold text-gray-900">
-                                      {candidate.percentage.toFixed(0)}%
-                                    </p>
-                                    <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
-                                  </div>
-                                </div>
-                                
-                                {/* Progress Bar */}
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div
-                                    className={`h-2 rounded-full transition-all ${
-                                      index === 0 && candidate.vote_count > 0
-                                        ? 'bg-yellow-400'
-                                        : 'bg-blue-500'
+                        {/* Kemajuan Voting Card */}
+                        <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200/50">
+                          <div className="relative p-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Kemajuan</p>
+                                <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.votingProgress}%</p>
+                                <div className="w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
+                                  <div 
+                                    className={`bg-blue-600 h-1.5 rounded-full relative progress-shimmer ${
+                                      animateProgress ? 'animate-progress-fill animate-progress-pulse' : ''
                                     }`}
-                                    style={{ width: `${candidate.percentage}%` }}
+                                    style={{ 
+                                      width: animateProgress ? `${categoryResult.votingProgress}%` : '0%',
+                                      animationDelay: '0.3s'
+                                    }}
                                   ></div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : results.length > 0 ? (
-                // Fallback: No categories, show all candidates
-                <div className="space-y-4">
-                  {results.slice(0, 3).map((candidate, index) => (
-                    <div
-                      key={candidate.id}
-                      className={`bg-white rounded-xl p-4 shadow-md ${
-                        index === 0 ? 'border-2 border-yellow-400' : 'border border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="flex-shrink-0">
-                          {candidate.photo_url ? (
-                            <Image
-                              src={candidate.photo_url}
-                              alt={candidate.name}
-                              width={60}
-                              height={60}
-                              className="rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-15 h-15 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xl">
-                              👤
+                              <div className="flex-shrink-0 ml-2">
+                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-bold text-gray-900 truncate">
-                            {candidate.name}
-                          </h3>
-                          {candidate.description && (
-                            <p className="text-sm text-gray-600 truncate">{candidate.description}</p>
-                          )}
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-2xl font-bold text-gray-900">
-                            {candidate.percentage.toFixed(0)}%
-                          </p>
-                          <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
+                          </div>
                         </div>
                       </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div
-                          className={`h-3 rounded-full ${
-                            index === 0 ? 'bg-yellow-400' : 'bg-blue-500'
-                          }`}
-                          style={{ width: `${candidate.percentage}%` }}
-                        ></div>
-                      </div>
+
+                      {/* Candidate Results - Scrollable Container */}
+                      {candidates.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 bg-white rounded-xl text-sm">
+                          Belum ada hasil voting untuk kategori ini
+                        </div>
+                      ) : (
+                        <div className="space-y-2 lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
+                          {candidates.map((candidate, index) => (
+                            <CandidateCard 
+                              key={candidate.id}
+                              candidate={candidate}
+                              index={index}
+                              animateProgress={animateProgress}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  
-                  {/* Summary Stats */}
-                  <div className="mt-8 grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-xl p-4 shadow-md">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">👤</span>
-                        <p className="text-sm text-gray-600">Total Suara</p>
-                      </div>
-                      <p className="text-2xl font-bold text-gray-900">{totalVotes}</p>
+                  )
+                })}
+              </div>
+            ) : results.length > 0 ? (
+              // Fallback: No categories, show all candidates
+              <div className="space-y-4">
+                {results.slice(0, 3).map((candidate, index) => (
+                  <LargeCandidateCard 
+                    key={candidate.id}
+                    candidate={candidate}
+                    index={index}
+                    animateProgress={animateProgress}
+                  />
+                ))}
+                
+                {/* Summary Stats */}
+                <div className="mt-8 grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-md">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">👤</span>
+                      <p className="text-sm text-gray-600">Total Suara</p>
                     </div>
-                    <div className="bg-white rounded-xl p-4 shadow-md">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">✓</span>
-                        <p className="text-sm text-gray-600">Kemajuan Voting</p>
-                      </div>
-                      <p className="text-2xl font-bold text-green-600">{votingProgress}%</p>
+                    <p className="text-2xl font-bold text-gray-900">{totalVotes}</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 shadow-md">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">✓</span>
+                      <p className="text-sm text-gray-600">Kemajuan Voting</p>
                     </div>
+                    <p className="text-2xl font-bold text-green-600">{votingProgress}%</p>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500 bg-white rounded-xl">
-                  Belum ada hasil voting
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500 bg-white rounded-xl">
+                Belum ada hasil voting
+              </div>
+            )}
           </div>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <a 
+            href="https://garuda-21.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-500 hover:text-gray-400 text-xs sm:text-sm transition-colors"
+          >
+            Powered by GARUDA-21.com
+          </a>
         </div>
       </div>
     </div>
