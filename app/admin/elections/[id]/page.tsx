@@ -164,7 +164,7 @@ export default function ElectionDetailPage() {
         const timestamp = Date.now()
         const random = Math.random().toString(36).substring(7)
         const qrCode = `voting-${electionId}-${timestamp}-${random}-${i}`
-        
+
         // Ensure unique QR code (prevent duplicates)
         if (!existingQRCodes.has(qrCode)) {
           sessionsToInsert.push({
@@ -216,19 +216,19 @@ export default function ElectionDetailPage() {
 
       // Switch to QR tab immediately for better UX
       setActiveTab('qr')
-      
+
       // Reset to first page when new QR codes are added (so user can see the new ones)
       setCurrentQrPage(1)
-      
+
       // Reset to first page when new QR codes are added (so user can see the new ones)
       setCurrentQrPage(1)
-      
+
       // Wait a bit to ensure database commit
       await new Promise(resolve => setTimeout(resolve, 300))
 
       // Reload data from database to ensure sync (but state already updated above)
       await loadData(true) // Skip loading state since we already updated UI
-      
+
       alert(`✅ Berhasil menambahkan ${createdCount} QR code baru!\n\nTotal QR code aktif: ${newTotal}\nQR code yang sudah ada tetap aman dan tidak terhapus.`)
     } catch (err: any) {
       console.error('Error generating QR codes:', err)
@@ -286,7 +286,7 @@ export default function ElectionDetailPage() {
       // Immediately update state to remove from UI
       const updatedSessions = votingSessions.filter(s => s.id !== sessionId)
       setVotingSessions(updatedSessions)
-      
+
       // Also update votingSession if it was the deleted one
       if (votingSession?.id === sessionId) {
         setVotingSession(updatedSessions.length > 0 ? updatedSessions[0] : null)
@@ -303,7 +303,7 @@ export default function ElectionDetailPage() {
 
       // Force reload data from database to ensure sync
       await loadData(true)
-      
+
       alert(`✅ QR Code #${qrCodeNumber} berhasil dihapus!`)
     } catch (err: any) {
       console.error('Error deleting QR code:', err)
@@ -379,10 +379,10 @@ export default function ElectionDetailPage() {
       // Force reload data from database (skip loading state for better UX)
       // This ensures we get the latest data from database
       await loadData(true)
-      
+
       // Small delay before showing alert to ensure UI is updated
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       alert(`✅ Semua QR code (${totalCount}) berhasil dihapus!`)
     } catch (err: any) {
       console.error('Error deleting all QR codes:', err)
@@ -448,7 +448,7 @@ export default function ElectionDetailPage() {
       const svgData = new XMLSerializer().serializeToString(clonedSvg)
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      
+
       if (!ctx) {
         alert('Canvas tidak didukung di browser ini')
         return
@@ -478,13 +478,13 @@ export default function ElectionDetailPage() {
             ctx.font = 'bold 24px Arial'
             ctx.textAlign = 'center'
             ctx.fillText(`QR Code #${qrCodeNumber}`, canvas.width / 2, printSize + 45)
-            
+
             ctx.font = '18px Arial'
             ctx.fillStyle = '#333333'
             // Truncate long titles to fit
             const title = election.title.length > 40 ? election.title.substring(0, 40) + '...' : election.title
             ctx.fillText(title, canvas.width / 2, printSize + 75)
-            
+
             ctx.font = '14px Arial'
             ctx.fillStyle = '#666666'
             ctx.fillText('Scan untuk Voting', canvas.width / 2, printSize + 100)
@@ -504,7 +504,7 @@ export default function ElectionDetailPage() {
               document.body.appendChild(link)
               link.click()
               document.body.removeChild(link)
-              
+
               // Clean up after a delay
               setTimeout(() => {
                 URL.revokeObjectURL(url)
@@ -526,7 +526,7 @@ export default function ElectionDetailPage() {
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
         const url = URL.createObjectURL(svgBlob)
         img.src = url
-        
+
         // Clean up SVG blob URL after a delay
         setTimeout(() => {
           URL.revokeObjectURL(url)
@@ -579,11 +579,10 @@ export default function ElectionDetailPage() {
               )}
               <div className="flex items-center gap-3 flex-wrap">
                 <span
-                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${
-                    election.is_active
-                      ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
-                      : 'bg-gray-100 text-gray-600 ring-2 ring-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 ${election.is_active
+                    ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
+                    : 'bg-gray-100 text-gray-600 ring-2 ring-gray-200'
+                    }`}
                 >
                   {election.is_active ? (
                     <>
@@ -598,11 +597,10 @@ export default function ElectionDetailPage() {
                   )}
                 </span>
                 <span
-                  className={`px-4 py-2 rounded-xl text-sm font-bold ${
-                    election.allow_view_results
-                      ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-200'
-                      : 'bg-orange-100 text-orange-700 ring-2 ring-orange-200'
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold ${election.allow_view_results
+                    ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-200'
+                    : 'bg-orange-100 text-orange-700 ring-2 ring-orange-200'
+                    }`}
                 >
                   {election.allow_view_results ? '👁️ Hasil Live: Diizinkan' : '🔒 Hasil Live: Diblokir'}
                 </span>
@@ -619,7 +617,7 @@ export default function ElectionDetailPage() {
               </div>
             )}
           </div>
-          
+
           {/* Toggle Allow View Results */}
           <div className="mt-6 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -639,10 +637,10 @@ export default function ElectionDetailPage() {
                 onClick={async () => {
                   try {
                     const newValue = !election.allow_view_results
-                    
+
                     // Update state immediately for better UX
                     setElection({ ...election, allow_view_results: newValue })
-                    
+
                     const { data, error } = await supabase
                       .from('elections')
                       .update({ allow_view_results: newValue })
@@ -672,14 +670,12 @@ export default function ElectionDetailPage() {
                     alert('Terjadi kesalahan: ' + (err.message || 'Unknown error'))
                   }
                 }}
-                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-all shadow-md flex-shrink-0 ${
-                  election.allow_view_results ? 'bg-blue-600' : 'bg-gray-400'
-                }`}
+                className={`relative inline-flex h-7 w-14 items-center rounded-full transition-all shadow-md flex-shrink-0 ${election.allow_view_results ? 'bg-blue-600' : 'bg-gray-400'
+                  }`}
               >
                 <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                    election.allow_view_results ? 'translate-x-8' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${election.allow_view_results ? 'translate-x-8' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>
@@ -714,11 +710,10 @@ export default function ElectionDetailPage() {
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab('categories')}
-                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
-                  activeTab === 'categories'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${activeTab === 'categories'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -727,11 +722,10 @@ export default function ElectionDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('candidates')}
-                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
-                  activeTab === 'candidates'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${activeTab === 'candidates'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -740,11 +734,10 @@ export default function ElectionDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('qr')}
-                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
-                  activeTab === 'qr'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${activeTab === 'qr'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -753,11 +746,10 @@ export default function ElectionDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('results')}
-                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${
-                  activeTab === 'results'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+                className={`flex-shrink-0 px-6 py-4 font-semibold text-sm border-b-3 whitespace-nowrap flex items-center gap-2 transition-all ${activeTab === 'results'
+                  ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -821,11 +813,10 @@ export default function ElectionDetailPage() {
                             )}
                           </div>
                           <span
-                            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold ${
-                              category.is_active
-                                ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
-                                : 'bg-gray-100 text-gray-600'
-                            }`}
+                            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold ${category.is_active
+                              ? 'bg-green-100 text-green-700 ring-2 ring-green-200'
+                              : 'bg-gray-100 text-gray-600'
+                              }`}
                           >
                             {category.is_active ? '● Aktif' : '○ Nonaktif'}
                           </span>
@@ -965,6 +956,16 @@ export default function ElectionDetailPage() {
                   <h2 className="text-xl font-bold text-gray-900">QR Code untuk Voting</h2>
                   {votingSessions.length > 0 && (
                     <div className="flex gap-2">
+                      <Link
+                        href={`/admin/elections/${electionId}/print-qr`}
+                        target="_blank"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print All PDF
+                      </Link>
                       <button
                         onClick={deactivateAllSessions}
                         className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium text-sm transition-all shadow-sm hover:shadow-md"
@@ -1027,11 +1028,10 @@ export default function ElectionDetailPage() {
                     <button
                       onClick={generateQRCode}
                       disabled={generating || qrCount < 1 || qrCount > 1000}
-                      className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-all ${
-                        generating || qrCount < 1 || qrCount > 1000
-                          ? 'opacity-50 cursor-not-allowed'
-                          : 'shadow-md hover:shadow-lg'
-                      }`}
+                      className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-all ${generating || qrCount < 1 || qrCount > 1000
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'shadow-md hover:shadow-lg'
+                        }`}
                     >
                       {generating ? (
                         <span className="flex items-center gap-2">
@@ -1087,7 +1087,7 @@ export default function ElectionDetailPage() {
                                   className="bg-white rounded-lg shadow-md p-4 border border-gray-200"
                                 >
                                   <div className="flex flex-col items-center space-y-4">
-                                    <div 
+                                    <div
                                       className="bg-white p-3 rounded-lg border-2 border-gray-200"
                                       data-qr-id={session.qr_code}
                                     >
@@ -1150,11 +1150,10 @@ export default function ElectionDetailPage() {
                                 <button
                                   onClick={() => setCurrentQrPage(prev => Math.max(1, prev - 1))}
                                   disabled={currentQrPage === 1}
-                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
-                                    currentQrPage === 1
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                  }`}
+                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${currentQrPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1166,7 +1165,7 @@ export default function ElectionDetailPage() {
                                 <div className="flex items-center gap-1">
                                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                                     // Show first page, last page, current page, and pages around current
-                                    const showPage = 
+                                    const showPage =
                                       page === 1 ||
                                       page === totalPages ||
                                       (page >= currentQrPage - 1 && page <= currentQrPage + 1)
@@ -1192,11 +1191,10 @@ export default function ElectionDetailPage() {
                                       <button
                                         key={page}
                                         onClick={() => setCurrentQrPage(page)}
-                                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
-                                          page === currentQrPage
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        }`}
+                                        className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors ${page === currentQrPage
+                                          ? 'bg-blue-600 text-white'
+                                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                          }`}
                                       >
                                         {page}
                                       </button>
@@ -1208,11 +1206,10 @@ export default function ElectionDetailPage() {
                                 <button
                                   onClick={() => setCurrentQrPage(prev => Math.min(totalPages, prev + 1))}
                                   disabled={currentQrPage === totalPages}
-                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${
-                                    currentQrPage === totalPages
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                  }`}
+                                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-1 ${currentQrPage === totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
                                 >
                                   <span className="hidden sm:inline">Selanjutnya</span>
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

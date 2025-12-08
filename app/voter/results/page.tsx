@@ -21,11 +21,11 @@ function useCountUp(end: number, duration: number = 1500, delay: number = 0, sho
       const animate = (currentTime: number) => {
         if (startTime === null) startTime = currentTime
         const progress = Math.min((currentTime - startTime) / duration, 1)
-        
+
         // Easing function for smooth animation
         const easeOutQuart = 1 - Math.pow(1 - progress, 4)
         setCount(Math.floor(easeOutQuart * end))
-        
+
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
@@ -79,29 +79,28 @@ interface VotingSession {
 }
 
 // Component for animated candidate card
-function CandidateCard({ 
-  candidate, 
-  index, 
-  animateProgress 
-}: { 
+function CandidateCard({
+  candidate,
+  index,
+  animateProgress
+}: {
   candidate: CandidateResult
   index: number
   animateProgress: boolean
 }) {
   const animatedPercentage = useCountUp(
-    Math.round(candidate.percentage), 
-    1500, 
-    index * 150, 
+    Math.round(candidate.percentage),
+    1500,
+    index * 150,
     animateProgress
   )
 
   return (
     <div
-      className={`bg-white rounded-lg p-2.5 shadow-sm transition-all hover:shadow-md ${
-        index === 0 && candidate.vote_count > 0
+      className={`bg-white rounded-lg p-2.5 shadow-sm transition-all hover:shadow-md ${index === 0 && candidate.vote_count > 0
           ? 'border-2 border-yellow-400'
           : 'border border-gray-200'
-      }`}
+        }`}
     >
       <div className="flex items-center gap-3 mb-2">
         <div className="flex-shrink-0">
@@ -119,7 +118,7 @@ function CandidateCard({
             </div>
           )}
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-gray-900 truncate">
             {candidate.name}
@@ -135,18 +134,16 @@ function CandidateCard({
           <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
         </div>
       </div>
-      
+
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
         <div
-          className={`h-2 rounded-full relative progress-shimmer ${
-            animateProgress ? 'animate-progress-fill' : ''
-          } ${
-            index === 0 && candidate.vote_count > 0
+          className={`h-2 rounded-full relative progress-shimmer ${animateProgress ? 'animate-progress-fill' : ''
+            } ${index === 0 && candidate.vote_count > 0
               ? 'bg-yellow-400 animate-winner-pulse'
               : 'bg-blue-500 animate-progress-pulse'
-          }`}
-          style={{ 
+            }`}
+          style={{
             width: animateProgress ? `${candidate.percentage}%` : '0%',
             animationDelay: `${index * 0.15}s`
           }}
@@ -157,27 +154,26 @@ function CandidateCard({
 }
 
 // Component for large candidate card (fallback without categories)
-function LargeCandidateCard({ 
-  candidate, 
-  index, 
-  animateProgress 
-}: { 
+function LargeCandidateCard({
+  candidate,
+  index,
+  animateProgress
+}: {
   candidate: CandidateResult
   index: number
   animateProgress: boolean
 }) {
   const animatedPercentage = useCountUp(
-    Math.round(candidate.percentage), 
-    1500, 
-    index * 150, 
+    Math.round(candidate.percentage),
+    1500,
+    index * 150,
     animateProgress
   )
 
   return (
     <div
-      className={`bg-white rounded-xl p-4 shadow-md ${
-        index === 0 ? 'border-2 border-yellow-400' : 'border border-gray-200'
-      }`}
+      className={`bg-white rounded-xl p-4 shadow-md ${index === 0 ? 'border-2 border-yellow-400' : 'border border-gray-200'
+        }`}
     >
       <div className="flex items-center gap-4 mb-3">
         <div className="flex-shrink-0">
@@ -210,16 +206,14 @@ function LargeCandidateCard({
           <p className="text-xs text-gray-500">{candidate.vote_count} suara</p>
         </div>
       </div>
-      
+
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
         <div
-          className={`h-3 rounded-full relative progress-shimmer ${
-            animateProgress ? 'animate-progress-fill' : ''
-          } ${
-            index === 0 ? 'bg-yellow-400 animate-winner-pulse' : 'bg-blue-500 animate-progress-pulse'
-          }`}
-          style={{ 
+          className={`h-3 rounded-full relative progress-shimmer ${animateProgress ? 'animate-progress-fill' : ''
+            } ${index === 0 ? 'bg-yellow-400 animate-winner-pulse' : 'bg-blue-500 animate-progress-pulse'
+            }`}
+          style={{
             width: animateProgress ? `${candidate.percentage}%` : '0%',
             animationDelay: `${index * 0.15}s`
           }}
@@ -232,7 +226,7 @@ function LargeCandidateCard({
 function ResultsPageContent() {
   const searchParams = useSearchParams()
   const electionId = searchParams.get('election')
-  
+
   const [election, setElection] = useState<Election | null>(null)
   const [results, setResults] = useState<CandidateResult[]>([])
   const [categoryResults, setCategoryResults] = useState<CategoryResults[]>([])
@@ -282,7 +276,7 @@ function ResultsPageContent() {
 
     loadResults()
     loadVotingSession()
-    
+
     // Refresh setiap 10 detik untuk update real-time
     // Jangan ubah activeCategoryTab saat refresh
     const interval = setInterval(() => {
@@ -300,7 +294,7 @@ function ResultsPageContent() {
       const endDate = new Date(election.end_date)
       const now = new Date()
       const diff = endDate.getTime() - now.getTime()
-      
+
       if (diff > 0) {
         const hours = Math.floor(diff / (1000 * 60 * 60))
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
@@ -370,10 +364,10 @@ function ResultsPageContent() {
 
       if (categoriesData && categoriesData.length > 0) {
         setCategories(categoriesData)
-        
+
         if (shouldSetDefaultTab) {
           const currentActiveTab = activeCategoryTabRef.current || activeCategoryTab
-          
+
           if (!currentActiveTab) {
             const firstCategoryId = categoriesData[0].id
             setActiveCategoryTab(firstCategoryId)
@@ -484,7 +478,7 @@ function ResultsPageContent() {
       <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center overflow-hidden">
         <div className="scanlines"></div>
         <div className="animate-laser-scan"></div>
-        
+
         <div className="relative z-10 text-center px-4">
           <div className="text-blue-500 font-mono text-xs md:text-sm mb-2 animate-pulse tracking-widest">SYSTEM INITIALIZING...</div>
           <div className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-white to-blue-600 animate-gradient tracking-tighter uppercase">
@@ -496,7 +490,7 @@ function ResultsPageContent() {
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
           </div>
         </div>
-        
+
         {/* Decorative Grid */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] animate-grid"></div>
@@ -560,11 +554,11 @@ function ResultsPageContent() {
                 </div>
               </div>
             </div>
-            
+
             <h1 className="text-3xl font-bold text-white mb-4">
               Hasil Belum Tersedia
             </h1>
-            
+
             <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-6">
               <p className="text-gray-300 text-lg mb-4">
                 Panitia tidak mengizinkan melihat hasil sebelum waktunya
@@ -591,9 +585,9 @@ function ResultsPageContent() {
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <a 
-              href="https://garuda-21.com" 
-              target="_blank" 
+            <a
+              href="https://garuda-21.com"
+              target="_blank"
               rel="noopener noreferrer"
               className="text-gray-500 hover:text-gray-400 text-xs sm:text-sm transition-colors"
             >
@@ -614,7 +608,7 @@ function ResultsPageContent() {
             {/* Left - Title */}
             <div className="flex items-center gap-2 justify-center md:justify-start">
               <span className="text-yellow-400 font-black text-xl lg:text-2xl">{titleNumber}</span>
-              <span className="text-white text-xs lg:text-sm ml-2">MALAM RESEPSI</span>
+              <span className="text-white text-xs lg:text-sm ml-2">DISDIKBUD</span>
             </div>
 
             {/* Center - JATENG | Pilih Pejabat Favorit LIVE */}
@@ -739,11 +733,10 @@ function ResultsPageContent() {
                           setActiveCategoryTab(categoryResult.category.id)
                           activeCategoryTabRef.current = categoryResult.category.id
                         }}
-                        className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${
-                          activeCategoryTab === categoryResult.category.id
+                        className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${activeCategoryTab === categoryResult.category.id
                             ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
                             : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-blue-300'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           <span>{categoryResult.category.name}</span>
@@ -791,11 +784,10 @@ function ResultsPageContent() {
                                 <p className="text-slate-600 text-xs font-semibold uppercase tracking-wide mb-0.5">Kemajuan</p>
                                 <p className="text-xl lg:text-2xl font-extrabold text-slate-900 leading-none mb-1">{categoryResult.votingProgress}%</p>
                                 <div className="w-full bg-blue-100 rounded-full h-1.5 overflow-hidden">
-                                  <div 
-                                    className={`bg-blue-600 h-1.5 rounded-full relative progress-shimmer ${
-                                      animateProgress ? 'animate-progress-fill animate-progress-pulse' : ''
-                                    }`}
-                                    style={{ 
+                                  <div
+                                    className={`bg-blue-600 h-1.5 rounded-full relative progress-shimmer ${animateProgress ? 'animate-progress-fill animate-progress-pulse' : ''
+                                      }`}
+                                    style={{
                                       width: animateProgress ? `${categoryResult.votingProgress}%` : '0%',
                                       animationDelay: '0.3s'
                                     }}
@@ -822,7 +814,7 @@ function ResultsPageContent() {
                       ) : (
                         <div className="space-y-2 lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                           {candidates.map((candidate, index) => (
-                            <CandidateCard 
+                            <CandidateCard
                               key={candidate.id}
                               candidate={candidate}
                               index={index}
@@ -839,14 +831,14 @@ function ResultsPageContent() {
               // Fallback: No categories, show all candidates
               <div className="space-y-4">
                 {results.slice(0, 3).map((candidate, index) => (
-                  <LargeCandidateCard 
+                  <LargeCandidateCard
                     key={candidate.id}
                     candidate={candidate}
                     index={index}
                     animateProgress={animateProgress}
                   />
                 ))}
-                
+
                 {/* Summary Stats */}
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   <div className="bg-white rounded-xl p-4 shadow-md">
@@ -873,16 +865,16 @@ function ResultsPageContent() {
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <a 
-            href="https://garuda-21.com" 
-            target="_blank" 
+          <a
+            href="https://garuda-21.com"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-gray-500 hover:text-gray-400 text-xs sm:text-sm transition-colors"
           >

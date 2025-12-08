@@ -30,7 +30,7 @@ function VotePageContent() {
   const qrCodeRaw = searchParams.get('qrcode')
   const qrCode = qrCodeRaw ? normalizeQRCode(qrCodeRaw) : null
   const categoryId = searchParams.get('category')
-  
+
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [election, setElection] = useState<Election | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
@@ -41,6 +41,7 @@ function VotePageContent() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [hasExistingVotes, setHasExistingVotes] = useState(false)
   const [existingVoteIds, setExistingVoteIds] = useState<string[]>([])
+  const [nextCategory, setNextCategory] = useState<Category | null>(null)
 
   useEffect(() => {
     if (!qrCode || !categoryId) {
@@ -53,6 +54,16 @@ function VotePageContent() {
   }, [qrCode, categoryId])
 
   const loadElectionData = async () => {
+    // Reset state for new category load
+    setLoading(true)
+    setHasExistingVotes(false)
+    setExistingVoteIds([])
+    setSelectedCandidates([])
+    setNextCategory(null)
+    setError(null)
+    setShowConfirm(false)
+    setSubmitting(false)
+
     try {
       // Get session with qr_code to ensure we use the exact value from database
       const { data: session, error: sessionError } = await supabase
@@ -114,26 +125,39 @@ function VotePageContent() {
 
       // Check if voter has already voted in this category
       // Use qr_code from database session (exact match) as voter_token
-      // This ensures consistency - QR code baru tidak akan match dengan votes lama
-      const voterToken = session.qr_code // Use exact qr_code from database, not from URL
-      const { data: existingVotesData } = await supabase
+      const voterToken = session.qr_code
+
+      // Fetch user's votes to see what's done and if current category is voted
+      const { data: userVotes } = await supabase
         .from('votes')
-        .select('id, candidate_id')
+        .select('id, candidate_id, category_id')
         .eq('election_id', session.election_id)
-        .eq('category_id', categoryId!)
         .eq('voter_token', voterToken)
 
-      if (existingVotesData && existingVotesData.length > 0) {
+      const currentCategoryVote = userVotes?.find(v => v.category_id === categoryId)
+
+      if (currentCategoryVote && currentCategoryVote.candidate_id) {
         setHasExistingVotes(true)
-        const voteIds = existingVotesData.map(v => v.id)
-        const candidateIds = existingVotesData.map(v => v.candidate_id).filter(Boolean) as string[]
-        setExistingVoteIds(voteIds)
-        // Pre-select candidates that were already voted
-        if (candidateIds.length > 0) {
-          setSelectedCandidates(candidateIds)
-        }
+        setExistingVoteIds([currentCategoryVote.id])
+        setSelectedCandidates([currentCategoryVote.candidate_id])
+
+        // --- PREPARE NEXT CATEGORY ---
+        // Fetch all categories to find the next one
+        const { data: allCategories } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('election_id', session.election_id)
+          .eq('is_active', true)
+          .order('order_index', { ascending: true })
+
+        const votedSet = new Set(userVotes?.map(v => v.category_id) || [])
+        // Find first unvoted category
+        const next = allCategories?.find(c => !votedSet.has(c.id))
+        setNextCategory(next || null)
       }
+
     } catch (err) {
+      console.error(err)
       setError('Terjadi kesalahan saat memuat data')
     } finally {
       setLoading(false)
@@ -141,18 +165,25 @@ function VotePageContent() {
   }
 
   const toggleCandidate = (candidateId: string) => {
+    // Prevent changing selection if already voted
+    if (hasExistingVotes) return
+
     setSelectedCandidates(prev => {
       if (prev.includes(candidateId)) {
-        return prev.filter(id => id !== candidateId)
-      } else if (prev.length < 2) {
-        return [...prev, candidateId]
+        return [] // Allow deselect
+      } else {
+        return [candidateId] // Only allow 1 selection, replace previous
       }
-      return prev
     })
   }
 
   const handleVote = async () => {
-    if (selectedCandidates.length !== 2 || !qrCode || !election) return
+    if (selectedCandidates.length !== 1 || !qrCode || !election) return
+
+    if (hasExistingVotes) {
+      setError('Anda sudah memberikan suara dan tidak dapat mengubahnya.')
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -172,63 +203,26 @@ function VotePageContent() {
       }
 
       // Use exact qr_code from database as voter_token
-      // This ensures consistency with the check in loadElectionData
       const voterToken = session.qr_code
 
-      // ALWAYS delete existing votes for this voter in this category first (allow re-voting)
-      // Wait for delete to complete before inserting
-      const { error: deleteError, count: deleteCount } = await supabase
+      // Insert 1 vote for the selected candidate
+      const { error: insertError } = await supabase
         .from('votes')
-        .delete()
-        .eq('election_id', session.election_id)
-        .eq('category_id', categoryId!)
-        .eq('voter_token', voterToken)
-        .select()
-
-      if (deleteError) {
-        console.error('Error deleting existing votes:', deleteError)
-        // Don't continue if delete fails - might cause conflicts
-        setError('Gagal mengupdate pilihan. Silakan coba lagi.')
-        setSubmitting(false)
-        return
-      }
-
-      // Small delay to ensure delete is committed (optional but safer)
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Insert 2 votes for the 2 selected candidates
-      const votesToInsert = selectedCandidates.map(candidateId => ({
-        election_id: session.election_id,
-        category_id: categoryId!,
-        candidate_id: candidateId,
-        voter_token: voterToken,
-      }))
-
-      // Insert all votes at once (better performance)
-      const { data: insertedVotes, error: insertError } = await supabase
-        .from('votes')
-        .insert(votesToInsert)
-        .select()
+        .insert({
+          election_id: session.election_id,
+          category_id: categoryId!,
+          candidate_id: selectedCandidates[0],
+          voter_token: voterToken,
+        })
 
       if (insertError) {
         console.error('Vote insert error:', insertError)
-        
-        // If still conflict after delete, there might be a constraint issue
+
         if (insertError.code === '23505') {
-          const errorMsg = insertError.message || ''
-          
-          // Check which constraint is failing
-          if (errorMsg.includes('votes_election_id_category_id_voter_token_key')) {
-            // Old constraint still exists - database needs to be fixed
-            setError('Database constraint belum diperbaiki. Silakan hubungi administrator.')
-          } else if (errorMsg.includes('votes_election_id_category_id_voter_token_candidate_id_key')) {
-            // New constraint - probably trying to vote for same candidate twice
-            setError('Anda sudah memilih kandidat ini. Silakan pilih kandidat yang berbeda.')
-          } else {
-            setError('Gagal memberikan suara. Silakan coba lagi.')
-          }
-        } else if (insertError.code === '409') {
-          setError('Terjadi konflik saat menyimpan suara. Silakan coba lagi.')
+          // Unique constraint violation
+          setError('Anda sudah memberikan suara untuk kategori ini.')
+          // Update state to reflect that they have voted
+          setHasExistingVotes(true)
         } else {
           setError('Gagal memberikan suara: ' + (insertError.message || 'Silakan coba lagi.'))
         }
@@ -236,7 +230,36 @@ function VotePageContent() {
         return
       }
 
-      router.push(`/voter/success?election=${session.election_id}&qrcode=${qrCode}&category=${categoryId}`)
+      // --- AUTO-ADVANCE LOGIC ---
+      // Fetch all active categories to find the next one
+      const { data: allCategories } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('election_id', session.election_id)
+        .eq('is_active', true)
+        .order('order_index', { ascending: true })
+
+      // Fetch user's votes to see what's done
+      const { data: userVotes } = await supabase
+        .from('votes')
+        .select('category_id')
+        .eq('election_id', session.election_id)
+        .eq('voter_token', voterToken)
+
+      const votedSet = new Set(userVotes?.map(v => v.category_id) || [])
+      // Ensure current category is marked as voted
+      votedSet.add(categoryId!)
+
+      // Find the first category that hasn't been voted yet
+      const nextCategory = allCategories?.find(c => !votedSet.has(c.id))
+
+      if (nextCategory) {
+        // Redirect to next category
+        router.push(`/voter/vote?qrcode=${qrCode}&category=${nextCategory.id}`)
+      } else {
+        // No more categories, go to success page
+        router.push(`/voter/success?election=${session.election_id}&qrcode=${qrCode}&category=${categoryId}`)
+      }
     } catch (err: any) {
       console.error('Vote submission error:', err)
       setError('Terjadi kesalahan: ' + (err.message || 'Silakan coba lagi.'))
@@ -274,7 +297,8 @@ function VotePageContent() {
   }
 
   const selectedCount = selectedCandidates.length
-  const canProceed = selectedCount === 2
+
+  const canProceed = selectedCount === 1 && !hasExistingVotes
 
   return (
     <div className="min-h-screen bg-white">
@@ -298,26 +322,49 @@ function VotePageContent() {
       <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 pb-20 sm:pb-24">
         {/* Category Badge */}
         {category && (
-          <div className="mb-4 inline-block px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-            {category.name}
+          <div className="flex justify-center sm:justify-start">
+            <div className={`mb-6 inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold shadow-lg transition-all ${hasExistingVotes
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white shadow-blue-500/30 ring-2 ring-white/20'
+              }`}>
+              {hasExistingVotes ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span>{category.name} <span className="font-normal opacity-75 mx-1">•</span> <span className="font-bold">Sudah Memilih</span></span>
+                </>
+              ) : (
+                <>
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                  </span>
+                  <span className="tracking-wide uppercase text-[10px] bg-white/20 px-1.5 py-0.5 rounded text-white font-bold mr-1 border border-white/20">Kategori</span>
+                  <span className="text-base tracking-tight">{category.name}</span>
+                </>
+              )}
+            </div>
           </div>
         )}
-        
+
         {/* Title */}
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
           Saatnya memberikan suara Anda!
         </h1>
-        
+
         {/* Instructions */}
         <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">
-          Pilih <span className="font-bold text-gray-900">dua orang</span> yang cocok di hati anda.
+          Pilih <span className="font-bold text-gray-900">satu orang</span> yang cocok di hati anda.
         </p>
 
         {/* Selection Counter */}
         {selectedCount > 0 && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800 font-medium">
-              {selectedCount} dari 2 kandidat dipilih
+              {selectedCount} dari 1 kandidat dipilih
             </p>
           </div>
         )}
@@ -331,11 +378,26 @@ function VotePageContent() {
               </svg>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-yellow-800 mb-1">
-                  Anda sudah memilih sebelumnya
+                  Anda sudah memilih
                 </p>
-                <p className="text-sm text-yellow-700">
-                  Anda dapat mengubah pilihan Anda dengan memilih kandidat baru dan mengkonfirmasi ulang.
+                <p className="text-sm text-yellow-700 mb-3">
+                  Terima kasih atas partisipasi Anda. Pilihan Anda telah tersimpan dan tidak dapat diubah.
                 </p>
+                {nextCategory ? (
+                  <Link
+                    href={`/voter/vote?qrcode=${qrCode}&category=${nextCategory.id}`}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Lanjut ke {nextCategory.name} &rarr;
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/voter/success?election=${election?.id}&qrcode=${qrCode}&category=${categoryId}`}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Lihat Hasil &rarr;
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -349,11 +411,10 @@ function VotePageContent() {
               <div
                 key={candidate.id}
                 onClick={() => toggleCandidate(candidate.id)}
-                className={`bg-white border-2 rounded-xl p-4 sm:p-5 cursor-pointer transition-all ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50 shadow-md'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                }`}
+                className={`bg-white border-2 rounded-xl p-4 sm:p-5 cursor-pointer transition-all ${isSelected
+                  ? 'border-blue-600 bg-blue-50 shadow-md'
+                  : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                  }`}
               >
                 <div className="flex items-center gap-4">
                   {/* Candidate Photo */}
@@ -372,7 +433,7 @@ function VotePageContent() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Candidate Info */}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
@@ -384,7 +445,7 @@ function VotePageContent() {
                       </p>
                     )}
                   </div>
-                  
+
                   {/* Selection Indicator */}
                   <div className="flex-shrink-0">
                     {isSelected ? (
@@ -419,11 +480,10 @@ function VotePageContent() {
             }
           }}
           disabled={!canProceed}
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 sm:py-4 px-6 rounded-xl text-base sm:text-lg transition-all shadow-lg ${
-            canProceed
-              ? 'opacity-100 cursor-pointer'
-              : 'opacity-50 cursor-not-allowed'
-          }`}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 sm:py-4 px-6 rounded-xl text-base sm:text-lg transition-all shadow-lg ${canProceed
+            ? 'opacity-100 cursor-pointer'
+            : 'opacity-50 cursor-not-allowed'
+            }`}
         >
           Lanjutkan
         </button>
@@ -435,9 +495,9 @@ function VotePageContent() {
           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <a 
-            href="https://garuda-21.com" 
-            target="_blank" 
+          <a
+            href="https://garuda-21.com"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm transition-colors"
           >
@@ -448,17 +508,17 @@ function VotePageContent() {
 
       {/* Confirmation Modal */}
       {showConfirm && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-4"
           onClick={() => setShowConfirm(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag Handle */}
             <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6 sm:hidden"></div>
-            
+
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Konfirmasi pilihan Anda!</h2>
             <p className="text-gray-600 mb-6 text-sm sm:text-base">
               Tinjau pilihan Anda dan ketuk 'Konfirmasi Suara' untuk memberikan suara.
@@ -499,14 +559,13 @@ function VotePageContent() {
             {/* Action Buttons */}
             <button
               onClick={handleVote}
-              disabled={submitting || selectedCandidates.length !== 2}
-              className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg mb-3 transition-all shadow-lg ${
-                submitting || selectedCandidates.length !== 2
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'opacity-100 cursor-pointer'
-              }`}
+              disabled={submitting || selectedCandidates.length !== 1}
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl text-lg mb-3 transition-all shadow-lg ${submitting || selectedCandidates.length !== 1
+                ? 'opacity-50 cursor-not-allowed'
+                : 'opacity-100 cursor-pointer'
+                }`}
             >
-              {submitting ? 'Mengirim...' : hasExistingVotes ? 'Update Pilihan' : 'Konfirmasi Suara'}
+              {submitting ? 'Mengirim...' : 'Konfirmasi Suara'}
             </button>
             <button
               onClick={() => setShowConfirm(false)}
@@ -520,7 +579,7 @@ function VotePageContent() {
 
       {/* Error Toast */}
       {error && (
-        <div className="fixed bottom-20 sm:bottom-24 left-4 right-4 max-w-2xl mx-auto bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg z-40">
+        <div className="fixed bottom-20 sm:bottom-24 left-4 right-4 max-w-2xl mx-auto bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg z-[60]">
           <div className="flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
