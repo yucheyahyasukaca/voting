@@ -38,7 +38,7 @@ export default function PrintQRCodesPage() {
 
             // Load election details
             const { data: electionData, error: electionError } = await supabase
-                .from('elections')
+                .from('vt_elections')
                 .select('id, title')
                 .eq('id', electionId)
                 .single()
@@ -53,7 +53,7 @@ export default function PrintQRCodesPage() {
 
             // Load ALL active voting sessions
             const { data: sessionsData, error: sessionsError } = await supabase
-                .from('voting_sessions')
+                .from('vt_voting_sessions')
                 .select('*')
                 .eq('election_id', electionId)
                 .eq('is_active', true)

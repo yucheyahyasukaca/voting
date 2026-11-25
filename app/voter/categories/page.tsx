@@ -43,7 +43,7 @@ function CategoriesPageContent() {
   const loadElectionData = async () => {
     try {
       const { data: session, error: sessionError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('election_id')
         .eq('qr_code', qrCode!)
         .single()
@@ -55,7 +55,7 @@ function CategoriesPageContent() {
       }
 
       const { data: electionData, error: electionError } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('id, title')
         .eq('id', session.election_id)
         .single()
@@ -69,7 +69,7 @@ function CategoriesPageContent() {
       setElection(electionData)
 
       const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('*')
         .eq('election_id', session.election_id)
         .eq('is_active', true)
@@ -85,7 +85,7 @@ function CategoriesPageContent() {
 
       // Load voted categories for this voter
       const { data: votesData } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .select('category_id')
         .eq('election_id', session.election_id)
         .eq('voter_token', qrCode!)

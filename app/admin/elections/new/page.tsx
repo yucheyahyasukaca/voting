@@ -25,7 +25,7 @@ export default function NewElectionPage() {
 
     try {
       const { data, error } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .insert({
           title: formData.title,
           description: formData.description || null,
@@ -161,7 +161,7 @@ export default function NewElectionPage() {
                     
                     // Upload to Supabase Storage
                     const { data, error } = await supabase.storage
-                      .from('elections')
+                      .from('vt-elections')
                       .upload(fileName, file, {
                         cacheControl: '3600',
                         upsert: false
@@ -175,7 +175,7 @@ export default function NewElectionPage() {
 
                     // Get public URL
                     const { data: { publicUrl } } = supabase.storage
-                      .from('elections')
+                      .from('vt-elections')
                       .getPublicUrl(fileName)
 
                     setFormData({ ...formData, hero_banner_url: publicUrl })
@@ -250,7 +250,7 @@ export default function NewElectionPage() {
               <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Upload banner ke Supabase Storage bucket "elections" atau masukkan URL secara manual
+              Upload banner ke Supabase Storage bucket "vt-elections" atau masukkan URL secara manual
             </p>
           </div>
 

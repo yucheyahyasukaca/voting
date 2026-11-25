@@ -48,7 +48,7 @@ function SuccessPageContent() {
       if (!token && electionId) {
         // Try to get from voting_sessions
         const { data: sessions } = await supabase
-          .from('voting_sessions')
+          .from('vt_voting_sessions')
           .select('qr_code')
           .eq('election_id', electionId!)
           .eq('is_active', true)
@@ -69,7 +69,7 @@ function SuccessPageContent() {
 
       // Load election data to check allow_view_results
       const { data: electionData } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('id, allow_view_results')
         .eq('id', electionId!)
         .single()
@@ -80,7 +80,7 @@ function SuccessPageContent() {
 
       // Load all active categories
       const { data: categoriesData } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('*')
         .eq('election_id', electionId!)
         .eq('is_active', true)
@@ -95,7 +95,7 @@ function SuccessPageContent() {
 
       // Load voted categories for this voter
       const { data: votesData } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .select('category_id')
         .eq('election_id', electionId!)
         .eq('voter_token', token)

@@ -26,7 +26,7 @@ export default function NewCategoryPage() {
 
     try {
       const { data, error } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .insert({
           election_id: electionId,
           name: formData.name,

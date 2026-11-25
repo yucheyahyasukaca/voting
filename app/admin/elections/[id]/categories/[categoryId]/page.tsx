@@ -29,7 +29,7 @@ export default function EditCategoryPage() {
   const loadCategory = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('*')
         .eq('id', categoryId)
         .single()
@@ -60,7 +60,7 @@ export default function EditCategoryPage() {
 
     try {
       const { error } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .update({
           name: formData.name,
           description: formData.description || null,

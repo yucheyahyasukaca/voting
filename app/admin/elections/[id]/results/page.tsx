@@ -105,7 +105,7 @@ export default function AdminResultsPage() {
 
     try {
       const { data: electionData } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('*')
         .eq('id', electionId)
         .single()
@@ -115,7 +115,7 @@ export default function AdminResultsPage() {
       }
 
       const { data: candidates } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .select('*')
         .eq('election_id', electionId)
         .order('order_index', { ascending: true })
@@ -124,7 +124,7 @@ export default function AdminResultsPage() {
 
       // Load categories
       const { data: categoriesData } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('*')
         .eq('election_id', electionId)
         .eq('is_active', true)
@@ -161,7 +161,7 @@ export default function AdminResultsPage() {
       }
 
       const { data: votes } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .select('candidate_id, voter_token, category_id')
         .eq('election_id', electionId)
 
@@ -174,7 +174,7 @@ export default function AdminResultsPage() {
       // Calculate voting progress: % of voters who have voted
       // Get total active voting sessions (unique QR codes)
       const { data: votingSessions } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('qr_code')
         .eq('election_id', electionId)
         .eq('is_active', true)
@@ -291,7 +291,7 @@ export default function AdminResultsPage() {
     try {
       // Delete all votes for this election
       const { error: deleteError } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .delete()
         .eq('election_id', electionId)
 

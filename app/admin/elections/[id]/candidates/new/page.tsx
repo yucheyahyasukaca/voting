@@ -28,7 +28,7 @@ export default function NewCandidatePage() {
 
     try {
       const { error } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .insert({
           election_id: electionId,
           name: formData.name,
@@ -125,7 +125,7 @@ export default function NewCandidatePage() {
                     
                     // Upload to Supabase Storage
                     const { data, error } = await supabase.storage
-                      .from('elections')
+                      .from('vt-elections')
                       .upload(fileName, file, {
                         cacheControl: '3600',
                         upsert: false
@@ -139,7 +139,7 @@ export default function NewCandidatePage() {
 
                     // Get public URL
                     const { data: { publicUrl } } = supabase.storage
-                      .from('elections')
+                      .from('vt-elections')
                       .getPublicUrl(fileName)
 
                     setFormData({ ...formData, photo_url: publicUrl })
@@ -193,7 +193,7 @@ export default function NewCandidatePage() {
             </div>
             
             <p className="mt-1 text-sm text-gray-500">
-              Upload foto ke Supabase Storage bucket "elections" atau masukkan URL secara manual
+              Upload foto ke Supabase Storage bucket "vt-elections" atau masukkan URL secara manual
             </p>
           </div>
 

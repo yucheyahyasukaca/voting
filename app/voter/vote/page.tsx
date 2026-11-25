@@ -67,7 +67,7 @@ function VotePageContent() {
     try {
       // Get session with qr_code to ensure we use the exact value from database
       const { data: session, error: sessionError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('election_id, qr_code')
         .eq('qr_code', qrCode!)
         .single()
@@ -79,7 +79,7 @@ function VotePageContent() {
       }
 
       const { data: electionData, error: electionError } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('id, title')
         .eq('id', session.election_id)
         .single()
@@ -94,7 +94,7 @@ function VotePageContent() {
 
       // Load category
       const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('id, name')
         .eq('id', categoryId!)
         .eq('election_id', session.election_id)
@@ -110,7 +110,7 @@ function VotePageContent() {
       setCategory(categoryData)
 
       const { data: candidatesData, error: candidatesError } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .select('*')
         .eq('election_id', session.election_id)
         .order('order_index', { ascending: true })
@@ -129,7 +129,7 @@ function VotePageContent() {
 
       // Fetch user's votes to see what's done and if current category is voted
       const { data: userVotes } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .select('id, candidate_id, category_id')
         .eq('election_id', session.election_id)
         .eq('voter_token', voterToken)
@@ -144,7 +144,7 @@ function VotePageContent() {
         // --- PREPARE NEXT CATEGORY ---
         // Fetch all categories to find the next one
         const { data: allCategories } = await supabase
-          .from('categories')
+          .from('vt_categories')
           .select('id, name')
           .eq('election_id', session.election_id)
           .eq('is_active', true)
@@ -191,7 +191,7 @@ function VotePageContent() {
     try {
       // Get session with qr_code to use exact value from database
       const { data: session, error: sessionError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('election_id, qr_code')
         .eq('qr_code', qrCode)
         .single()
@@ -207,7 +207,7 @@ function VotePageContent() {
 
       // Insert 1 vote for the selected candidate
       const { error: insertError } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .insert({
           election_id: session.election_id,
           category_id: categoryId!,
@@ -233,7 +233,7 @@ function VotePageContent() {
       // --- AUTO-ADVANCE LOGIC ---
       // Fetch all active categories to find the next one
       const { data: allCategories } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('id')
         .eq('election_id', session.election_id)
         .eq('is_active', true)
@@ -241,7 +241,7 @@ function VotePageContent() {
 
       // Fetch user's votes to see what's done
       const { data: userVotes } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .select('category_id')
         .eq('election_id', session.election_id)
         .eq('voter_token', voterToken)

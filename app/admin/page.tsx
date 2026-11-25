@@ -53,7 +53,7 @@ export default function AdminPage() {
   const loadElections = async () => {
     try {
       const { data, error } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -73,7 +73,7 @@ export default function AdminPage() {
   const toggleElectionStatus = async (id: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .update({ is_active: !currentStatus })
         .eq('id', id)
 
@@ -95,7 +95,7 @@ export default function AdminPage() {
     try {
       // Delete election (cascade will handle related data)
       const { error } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .delete()
         .eq('id', deleteModal.election.id)
 
@@ -157,7 +157,7 @@ export default function AdminPage() {
     setUpdating(true)
     try {
       const { error } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .update({
           start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),

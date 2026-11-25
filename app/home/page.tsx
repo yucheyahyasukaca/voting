@@ -62,7 +62,7 @@ export default function HomePage() {
   const loadElectionData = async () => {
     try {
       const { data: elections } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
@@ -72,7 +72,7 @@ export default function HomePage() {
         setElection(activeElection)
 
         const { data: candidatesData } = await supabase
-          .from('candidates')
+          .from('vt_candidates')
           .select('*')
           .eq('election_id', activeElection.id)
           .order('order_index', { ascending: true })

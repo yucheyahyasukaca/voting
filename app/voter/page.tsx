@@ -90,7 +90,7 @@ function VoterPageContent() {
   const loadElectionData = async () => {
     try {
       const { data: session, error: sessionError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('election_id, is_active, expires_at')
         .eq('qr_code', qrCode!)
         .single()
@@ -109,7 +109,7 @@ function VoterPageContent() {
 
       // Load election tanpa filter is_active dulu, untuk cek error lebih jelas
       const { data: electionData, error: electionError } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('*')
         .eq('id', session.election_id)
         .single()
@@ -137,7 +137,7 @@ function VoterPageContent() {
       setElection(electionData)
 
       const { data: candidatesData, error: candidatesError } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .select('*')
         .eq('election_id', electionData.id)
         .order('order_index', { ascending: true })

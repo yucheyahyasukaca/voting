@@ -20,35 +20,35 @@ export default function ResetDataPage() {
     try {
       // Delete in order due to foreign key constraints
       const { error: votesError } = await supabase
-        .from('votes')
+        .from('vt_votes')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000') // Delete all
 
       if (votesError) throw votesError
 
       const { error: sessionsError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (sessionsError) throw sessionsError
 
       const { error: categoriesError } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (categoriesError) throw categoriesError
 
       const { error: candidatesError } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (candidatesError) throw candidatesError
 
       const { error: electionsError } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000')
 

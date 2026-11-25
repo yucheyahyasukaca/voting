@@ -76,7 +76,7 @@ export default function ElectionDetailPage() {
 
       // Load election
       const { data: electionData, error: electionError } = await supabase
-        .from('elections')
+        .from('vt_elections')
         .select('*')
         .eq('id', electionId)
         .single()
@@ -91,7 +91,7 @@ export default function ElectionDetailPage() {
 
       // Load candidates
       const { data: candidatesData } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .select('*')
         .eq('election_id', electionId)
         .order('order_index', { ascending: true })
@@ -100,7 +100,7 @@ export default function ElectionDetailPage() {
 
       // Load categories
       const { data: categoriesData } = await supabase
-        .from('categories')
+        .from('vt_categories')
         .select('*')
         .eq('election_id', electionId)
         .order('order_index', { ascending: true })
@@ -110,7 +110,7 @@ export default function ElectionDetailPage() {
       // Load voting sessions (all active)
       // Note: We only load active sessions, deleted sessions won't appear
       const { data: sessionsData, error: sessionsError } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('*')
         .eq('election_id', electionId)
         .eq('is_active', true)
@@ -148,7 +148,7 @@ export default function ElectionDetailPage() {
     try {
       // Get existing QR codes to ensure we don't create duplicates
       const { data: existingSessions } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .select('qr_code')
         .eq('election_id', electionId)
         .eq('is_active', true)
@@ -185,7 +185,7 @@ export default function ElectionDetailPage() {
 
       // Insert new sessions (only adds new QR codes, does NOT delete existing ones)
       const { data, error } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .insert(sessionsToInsert)
         .select()
 
@@ -245,7 +245,7 @@ export default function ElectionDetailPage() {
 
     try {
       const { error } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .update({ is_active: false })
         .eq('election_id', electionId)
 
@@ -269,7 +269,7 @@ export default function ElectionDetailPage() {
     try {
       // Delete the voting session from database first
       const { data, error } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .delete()
         .eq('id', sessionId)
         .select()
@@ -352,7 +352,7 @@ export default function ElectionDetailPage() {
 
       // Delete all voting sessions for this election
       const { data, error } = await supabase
-        .from('voting_sessions')
+        .from('vt_voting_sessions')
         .delete()
         .eq('election_id', electionId)
         .select()
@@ -397,7 +397,7 @@ export default function ElectionDetailPage() {
 
     try {
       const { error } = await supabase
-        .from('candidates')
+        .from('vt_candidates')
         .delete()
         .eq('id', candidateId)
 
@@ -642,7 +642,7 @@ export default function ElectionDetailPage() {
                     setElection({ ...election, allow_view_results: newValue })
 
                     const { data, error } = await supabase
-                      .from('elections')
+                      .from('vt_elections')
                       .update({ allow_view_results: newValue })
                       .eq('id', electionId)
                       .select()
@@ -833,7 +833,7 @@ export default function ElectionDetailPage() {
                               if (!confirm('Yakin ingin menghapus kategori ini?')) return
                               try {
                                 const { error } = await supabase
-                                  .from('categories')
+                                  .from('vt_categories')
                                   .delete()
                                   .eq('id', category.id)
                                 if (error) {
