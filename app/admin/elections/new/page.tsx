@@ -86,7 +86,7 @@ export default function NewElectionPage() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder:text-gray-400 transition-all"
-              placeholder="Contoh: Pilih Pejabat Favorit Anda 2025"
+              placeholder="Contoh: Pilih Pejabat Favorit Anda 2026"
             />
           </div>
 
