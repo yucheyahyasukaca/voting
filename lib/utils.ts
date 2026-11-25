@@ -21,3 +21,17 @@ export function formatDate(date: string | Date): string {
   })
 }
 
+
+/**
+ * Tahun yang ditampilkan di halaman voter: angka di judul jika ada,
+ * kalau tidak, tahun dari tanggal mulai pemilihan, kalau tidak, tahun sekarang.
+ */
+export function getElectionYear(election?: { title?: string | null; start_date?: string | null } | null): string {
+  const fromTitle = election?.title?.match(/(\d+)/)
+  if (fromTitle) return fromTitle[1]
+  if (election?.start_date) {
+    const d = new Date(election.start_date)
+    if (!isNaN(d.getTime())) return String(d.getFullYear())
+  }
+  return String(new Date().getFullYear())
+}

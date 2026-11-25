@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getElectionYear } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -107,8 +108,7 @@ export default function HomePage() {
     )
   }
 
-  const titleMatch = election.title.match(/(\d+)/)
-  const titleNumber = titleMatch ? titleMatch[1] : '2025'
+  const titleNumber = getElectionYear(election)
   const titleText = election.title.replace(/\d+.*/, '').trim() || 'Pilih Pejabat Favorit Anda'
 
   return (
@@ -178,7 +178,7 @@ export default function HomePage() {
 
                 <div className="flex flex-col gap-2 mt-2">
                   <div className="w-16 h-16 bg-yellow-400 rounded flex items-center justify-center">
-                    <span className="text-yellow-900 font-bold text-sm">2025</span>
+                    <span className="text-yellow-900 font-bold text-sm">{titleNumber}</span>
                   </div>
                   <div className="w-16 h-16 bg-blue-600 rounded flex items-center justify-center">
                     <span className="text-white font-bold text-sm">02/12</span>

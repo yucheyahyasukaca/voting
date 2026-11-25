@@ -225,7 +225,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="px-4 sm:px-6 lg:px-8 py-4">
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                © 2025 Voting System. All rights reserved.
+                © {new Date().getFullYear()} Voting System. All rights reserved.
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Powered by{' '}

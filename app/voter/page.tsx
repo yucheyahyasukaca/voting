@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getElectionYear } from '@/lib/utils'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -183,8 +184,7 @@ function VoterPageContent() {
   }
 
   // Extract number from title
-  const titleMatch = election.title.match(/(\d+)/)
-  const titleNumber = titleMatch ? titleMatch[1] : '2025'
+  const titleNumber = getElectionYear(election)
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -341,7 +341,7 @@ function VoterPageContent() {
               {/* Left Side - Main Content */}
               <div className="lg:col-span-7">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-8">
-                  {/* Number "2025" */}
+                  {/* Tahun pemilihan */}
                   <div className="flex-shrink-0">
                     <h1 className="text-[80px] sm:text-[100px] md:text-[140px] lg:text-[160px] font-black leading-none text-yellow-400 text-center md:text-left" style={{ letterSpacing: '-0.03em' }}>
                       {titleNumber}
@@ -437,7 +437,7 @@ function VoterPageContent() {
 
           {candidates.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {candidates.slice(0, 3).map((candidate) => (
+              {candidates.map((candidate) => (
                 <Link
                   key={candidate.id}
                   href={`/voter?qrcode=${qrCode}&view=nominees`}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getElectionYear } from '@/lib/utils'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -45,6 +46,7 @@ interface Election {
   id: string
   title: string
   description: string
+  start_date?: string
   end_date: string
   allow_view_results: boolean
 }
@@ -470,8 +472,7 @@ function ResultsPageContent() {
     }
   }
 
-  const titleMatch = election?.title.match(/(\d+)/)
-  const titleNumber = titleMatch ? titleMatch[1] : '2025'
+  const titleNumber = getElectionYear(election)
 
   if (showIntro) {
     return (
