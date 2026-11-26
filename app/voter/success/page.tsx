@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import VoterHeader from '@/components/voter/VoterHeader'
 
 interface Category {
   id: string
@@ -128,21 +129,7 @@ function SuccessPageContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <nav className="bg-black border-b border-gray-800 relative z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-white font-bold text-sm">JATENG</span>
-              <span className="text-gray-500">|</span>
-              <span className="text-white text-sm font-medium">Pilih Pejabat Favorit</span>
-            </div>
-            <Link href="/admin" className="text-white hover:text-gray-300 text-sm transition-colors">
-              Butuh bantuan?
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <VoterHeader qrCode={qrCode} electionId={electionId} />
 
       <div className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4 py-8">
         <div className="text-center max-w-md w-full">
@@ -267,16 +254,16 @@ function SuccessPageContent() {
           
           {/* Toast Card */}
           <div className="relative w-full max-w-md pointer-events-auto animate-slide-up">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden">
+            <div className="bg-white rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden">
               {/* Decorative Top Bar */}
-              <div className="h-1.5 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600"></div>
+              <div className="h-1.5 bg-orange-400"></div>
               
               <div className="p-5 sm:p-6">
                 <div className="flex items-start gap-4">
                   {/* Icon with Animation */}
                   <div className="flex-shrink-0">
                     <div className="relative">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
                         <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -312,7 +299,7 @@ function SuccessPageContent() {
                 {/* Progress Bar (Auto Dismiss Indicator) */}
                 <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full animate-progress"
+                    className="h-full bg-orange-400 rounded-full animate-progress"
                     style={{ animationDuration: '5s' }}
                   ></div>
                 </div>

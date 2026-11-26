@@ -116,7 +116,7 @@ export default function HomePage() {
       <header className="bg-gray-900 border-b border-gray-800 px-4 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-red-500 font-bold">DISDIKBUD</span>
+            <span className="text-red-500 font-bold">DISDIK</span>
             <span className="text-gray-500">|</span>
             <span className="text-gray-300">Panitia Pemilihan</span>
           </div>
@@ -149,7 +149,7 @@ export default function HomePage() {
               className="object-cover opacity-30"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900"></div>
+            <div className="w-full h-full bg-jt-ink"></div>
           )}
           <div className="absolute inset-0 bg-black/60"></div>
           

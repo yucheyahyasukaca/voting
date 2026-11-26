@@ -482,7 +482,7 @@ function ResultsPageContent() {
 
         <div className="relative z-10 text-center px-4">
           <div className="text-blue-500 font-mono text-xs md:text-sm mb-2 animate-pulse tracking-widest">SYSTEM INITIALIZING...</div>
-          <div className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-white to-blue-600 animate-gradient tracking-tighter uppercase">
+          <div className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter uppercase">
             HASIL LIVE
           </div>
           <div className="mt-6 flex justify-center gap-2">
@@ -609,7 +609,7 @@ function ResultsPageContent() {
             {/* Left - Title */}
             <div className="flex items-center gap-2 justify-center md:justify-start">
               <span className="text-yellow-400 font-black text-xl lg:text-2xl">{titleNumber}</span>
-              <span className="text-white text-xs lg:text-sm ml-2">DISDIKBUD</span>
+              <span className="text-white text-xs lg:text-sm ml-2">DISDIK</span>
             </div>
 
             {/* Center - JATENG | Pilih Pejabat Favorit LIVE */}
@@ -735,7 +735,7 @@ function ResultsPageContent() {
                           activeCategoryTabRef.current = categoryResult.category.id
                         }}
                         className={`px-3 py-1.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap ${activeCategoryTab === categoryResult.category.id
-                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                            ? 'bg-blue-600 text-white shadow-md'
                             : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-blue-300'
                           }`}
                       >
@@ -759,7 +759,7 @@ function ResultsPageContent() {
                       {/* Category Stats */}
                       <div className="grid grid-cols-2 gap-2 mb-3">
                         {/* Total Suara Card */}
-                        <div className="group relative overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-indigo-50 rounded-xl shadow-sm border border-slate-200/50">
+                        <div className="group relative overflow-hidden bg-slate-50 rounded-xl shadow-sm border border-slate-200/50">
                           <div className="relative p-2.5">
                             <div className="flex items-center justify-between">
                               <div className="flex-1 min-w-0">
@@ -778,7 +778,7 @@ function ResultsPageContent() {
                         </div>
 
                         {/* Kemajuan Voting Card */}
-                        <div className="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200/50">
+                        <div className="group relative overflow-hidden bg-blue-50 rounded-xl shadow-sm border border-blue-200/50">
                           <div className="relative p-2.5">
                             <div className="flex items-center justify-between">
                               <div className="flex-1 min-w-0">

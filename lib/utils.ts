@@ -35,3 +35,53 @@ export function getElectionYear(election?: { title?: string | null; start_date?:
   }
   return String(new Date().getFullYear())
 }
+
+export interface CandidateProfileRow {
+  label: string
+  value: string
+}
+
+/**
+ * Deskripsi kandidat berformat baris "Label : Nilai".
+ * Mengembalikan baris-baris profil (tanpa "Nama", karena sudah jadi judul)
+ * dan teks bebas yang tidak berformat itu.
+ */
+export function parseCandidateProfile(description?: string | null): {
+  rows: CandidateProfileRow[]
+  notes: string[]
+} {
+  const rows: CandidateProfileRow[] = []
+  const notes: string[] = []
+  for (const raw of (description || '').split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line) continue
+    const idx = line.indexOf(':')
+    if (idx > 0 && idx < 32) {
+      const label = line.slice(0, idx).trim().replace(/\s*\/\s*/g, ' / ')
+      const value = line.slice(idx + 1).trim()
+      if (!value) continue
+      if (label.toLowerCase() === 'nama') continue
+      rows.push({ label, value })
+    } else {
+      notes.push(line)
+    }
+  }
+  return { rows, notes }
+}
+
+/** Jabatan singkat untuk daftar kandidat. */
+export function getCandidateRole(description?: string | null): string {
+  const { rows } = parseCandidateProfile(description)
+  const job = rows.find((r) => r.label.toLowerCase().startsWith('jabatan'))
+  return job ? job.value : ''
+}
+
+export function getInitials(name: string): string {
+  return name
+    .replace(/[.,].*$/, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('')
+}

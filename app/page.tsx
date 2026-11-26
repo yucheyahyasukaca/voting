@@ -181,7 +181,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-jt-ink text-white flex flex-col items-center justify-center px-4">
       {!scanning ? (
         <div className="text-center max-w-md">
           <div className="mb-8">

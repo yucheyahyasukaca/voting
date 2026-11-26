@@ -8,6 +8,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        jt: {
+          ink: '#0B1F3A',
+          ink2: '#132C52',
+          gold: '#F2B705',
+          paper: '#F6F3EC',
+          line: '#E4DECF',
+          muted: '#5B6475',
+          ok: '#177245',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
